@@ -1,0 +1,18 @@
+import { Router } from 'express';
+import { authMiddleware } from '../../middlewares/auth.middleware.js';
+import { validate } from '../../middlewares/validation.middleware.js';
+import { asyncHandler } from '../../utils/asyncHandler.js';
+import * as c from './invoice.controller.js';
+import { invoiceSchema } from './invoice.validation.js';
+const router = Router();
+router.use(authMiddleware);
+router.get('/', asyncHandler(c.listInvoices));
+router.get('/:id', asyncHandler(c.getInvoice));
+router.post('/', validate(invoiceSchema), asyncHandler(c.createInvoice));
+router.put('/:id', validate(invoiceSchema), asyncHandler(c.updateInvoice));
+router.delete('/:id', asyncHandler(c.deleteInvoice));
+router.post('/:id/submit', asyncHandler(c.submitInvoice));
+router.post('/:id/pay', asyncHandler(c.payInvoice));
+router.post('/:id/cancel', asyncHandler(c.cancelInvoice));
+router.get('/:id/histories', asyncHandler(c.histories));
+export default router;

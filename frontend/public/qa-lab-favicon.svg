@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="46" viewBox="0 0 48 46" fill="none">
+  <defs>
+    <linearGradient id="flaskStroke" x1="12" y1="4" x2="38" y2="42" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2563EB"/>
+      <stop offset="1" stop-color="#1D4ED8"/>
+    </linearGradient>
+    <linearGradient id="liquid" x1="16" y1="27" x2="33" y2="41" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#67E8F9"/>
+      <stop offset="1" stop-color="#38BDF8"/>
+    </linearGradient>
+    <linearGradient id="glass" x1="15" y1="9" x2="34" y2="40" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#DBEAFE" stop-opacity=".65"/>
+      <stop offset="1" stop-color="#BFDBFE" stop-opacity=".2"/>
+    </linearGradient>
+  </defs>
+
+  <!-- bubbles -->
+  <circle cx="28.5" cy="4.5" r="2.5" fill="#38BDF8"/>
+  <circle cx="23.5" cy="10.5" r="1.8" fill="#60A5FA"/>
+  <circle cx="27.5" cy="17" r="1.35" fill="#7DD3FC"/>
+
+  <!-- flask outline -->
+  <path d="M18 8.5h12" stroke="url(#flaskStroke)" stroke-width="3.2" stroke-linecap="round"/>
+  <path d="M20 9v9.3L9.8 36.5C7.9 39.9 10.4 44 14.3 44h19.4c3.9 0 6.4-4.1 4.5-7.5L28 18.3V9"
+        fill="url(#glass)" stroke="url(#flaskStroke)" stroke-width="3.2" stroke-linejoin="round"/>
+
+  <!-- liquid -->
+  <path d="M14.3 34.5c4.6-1.4 8.1 1 12.1-.1 3.2-.9 5.1-1.7 7.3-.7l3.2 5.5c.8 1.4-.2 3.1-1.9 3.1H13c-1.7 0-2.7-1.7-1.9-3.1l3.2-4.7Z"
+        fill="url(#liquid)" opacity=".95"/>
+
+  <!-- flask bubbles -->
+  <circle cx="23" cy="24" r="2.1" fill="#7DD3FC" stroke="#2563EB" stroke-width="1"/>
+  <circle cx="28.5" cy="29" r="1.5" fill="#BAE6FD" stroke="#2563EB" stroke-width=".9"/>
+  <circle cx="20" cy="36.5" r="2.6" fill="#E0F2FE" stroke="#2563EB" stroke-width="1"/>
+
+  <!-- highlight -->
+  <path d="M17.4 22.5 12.2 36.9c-.6 1.8.2 3.7 1.9 4.5" stroke="#EFF6FF" stroke-width="1.2" stroke-linecap="round" opacity=".75"/>
+</svg>

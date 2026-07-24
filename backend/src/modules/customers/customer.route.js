@@ -1,0 +1,15 @@
+import { Router } from 'express';
+import { authMiddleware } from '../../middlewares/auth.middleware.js';
+import { validate } from '../../middlewares/validation.middleware.js';
+import { asyncHandler } from '../../utils/asyncHandler.js';
+import * as c from './customer.controller.js';
+import { customerSchema, statusSchema } from './customer.validation.js';
+const router = Router();
+router.use(authMiddleware);
+router.get('/', asyncHandler(c.listCustomers));
+router.get('/:id', asyncHandler(c.getCustomer));
+router.post('/', validate(customerSchema), asyncHandler(c.createCustomer));
+router.put('/:id', validate(customerSchema), asyncHandler(c.updateCustomer));
+router.patch('/:id/status', validate(statusSchema), asyncHandler(c.updateCustomerStatus));
+router.delete('/:id', asyncHandler(c.deleteCustomer));
+export default router;
