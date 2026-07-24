@@ -1,0 +1,116 @@
+
+> backend@1.0.0 dev
+> nodemon src/server.js
+
+[33m[nodemon] 3.1.14[39m
+[33m[nodemon] to restart at any time, enter `rs`[39m
+[33m[nodemon] watching path(s): *.*[39m
+[33m[nodemon] watching extensions: js,mjs,cjs,json[39m
+[32m[nodemon] starting `node src/server.js`[39m
+QA Lab API running on http://localhost:3001
+[0mHEAD /api/health [32m200[0m 4.172 ms - 43[0m
+[0mHEAD /api/docs/openapi.json [32m200[0m 1.035 ms - 12106[0m
+[0mHEAD /swagger/swagger-ui.css [32m200[0m 3.768 ms - 178977[0m
+[0mHEAD /swagger/swagger-ui-bundle.js [32m200[0m 0.943 ms - 1551729[0m
+[0mHEAD /swagger/swagger-ui-standalone-preset.js [32m200[0m 0.798 ms - 268471[0m
+[0mHEAD /swagger/swagger-init.js [32m200[0m 0.575 ms - 290[0m
+[0mHEAD /api/docs/ [32m200[0m 0.958 ms - 499[0m
+[0mGET /api/docs/ [32m200[0m 0.945 ms - 499[0m
+[0mGET /api/docs/openapi.json [32m200[0m 0.854 ms - 12106[0m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node src/server.js`[39m
+QA Lab API running on http://localhost:3001
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node src/server.js`[39m
+QA Lab API running on http://localhost:3001
+[0mHEAD /api/health [32m200[0m 3.665 ms - 43[0m
+[0mHEAD /api/docs/openapi.json [32m200[0m 0.512 ms - 12106[0m
+[0mHEAD /swagger/swagger-ui.css [32m200[0m 2.112 ms - 178977[0m
+[0mHEAD /swagger/swagger-ui-bundle.js [32m200[0m 0.622 ms - 1551729[0m
+[0mHEAD /swagger/swagger-ui-standalone-preset.js [32m200[0m 0.868 ms - 268471[0m
+[0mHEAD /swagger/swagger-init.js [32m200[0m 0.415 ms - 290[0m
+[0mHEAD /api/docs/ [32m200[0m 0.634 ms - 499[0m
+[0mGET /api/docs/ [32m200[0m 2.035 ms - 499[0m
+[0mGET /swagger/swagger-init.js [32m200[0m 12.395 ms - 290[0m
+[0mGET /swagger/swagger-ui.css [32m200[0m 17.565 ms - 178977[0m
+[0mGET /swagger/swagger-ui-standalone-preset.js [32m200[0m 16.446 ms - 268471[0m
+[0mGET /swagger/swagger-ui-bundle.js [32m200[0m 16.866 ms - 1551729[0m
+[0mGET /api/docs/openapi.json [32m200[0m 0.685 ms - 12106[0m
+[0mGET /api/docs/ [36m304[0m 0.895 ms - -[0m
+[0mGET /swagger/swagger-ui.css [36m304[0m 2.867 ms - -[0m
+[0mGET /swagger/swagger-ui-standalone-preset.js [36m304[0m 4.254 ms - -[0m
+[0mGET /swagger/swagger-ui-bundle.js [36m304[0m 4.570 ms - -[0m
+[0mGET /swagger/swagger-init.js [36m304[0m 0.751 ms - -[0m
+[0mGET /api/docs/openapi.json [36m304[0m 0.740 ms - -[0m
+[0mGET /swagger/swagger-ui.css [36m304[0m 0.521 ms - -[0m
+[0mGET /.well-known/appspecific/com.chrome.devtools.json [33m404[0m 0.668 ms - 54[0m
+[0mGET /swagger/swagger-ui.css.map [33m404[0m 2.285 ms - 54[0m
+[0mGET /api/docs/ [36m304[0m 0.486 ms - -[0m
+[0mGET /swagger/swagger-ui.css [36m304[0m 2.361 ms - -[0m
+[0mGET /swagger/swagger-ui-bundle.js [36m304[0m 2.549 ms - -[0m
+[0mGET /swagger/swagger-ui-standalone-preset.js [36m304[0m 2.667 ms - -[0m
+[0mGET /swagger/swagger-init.js [36m304[0m 3.069 ms - -[0m
+[0mGET /.well-known/appspecific/com.chrome.devtools.json [33m404[0m 0.354 ms - 54[0m
+[0mGET /swagger/swagger-ui.css.map [33m404[0m 0.945 ms - 54[0m
+[0mGET /api/docs/openapi.json [36m304[0m 0.601 ms - -[0m
+[0mPOST /api/auth/login [32m200[0m 1065.200 ms - 362[0m
+AppError: Token tidak tersedia
+    at authMiddleware (file:///C:/Users/LOQ/playgroundQA/qa-lab/backend/src/middlewares/auth.middleware.js:8:47)
+    at Layer.handleRequest (C:\Users\LOQ\playgroundQA\qa-lab\backend\node_modules\router\lib\layer.js:152:17)
+    at next (C:\Users\LOQ\playgroundQA\qa-lab\backend\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (C:\Users\LOQ\playgroundQA\qa-lab\backend\node_modules\router\lib\route.js:117:3)
+    at handle (C:\Users\LOQ\playgroundQA\qa-lab\backend\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (C:\Users\LOQ\playgroundQA\qa-lab\backend\node_modules\router\lib\layer.js:152:17)
+    at C:\Users\LOQ\playgroundQA\qa-lab\backend\node_modules\router\index.js:295:15
+    at processParams (C:\Users\LOQ\playgroundQA\qa-lab\backend\node_modules\router\index.js:582:12)
+    at next (C:\Users\LOQ\playgroundQA\qa-lab\backend\node_modules\router\index.js:291:5)
+    at Function.handle (C:\Users\LOQ\playgroundQA\qa-lab\backend\node_modules\router\index.js:186:3) {
+  statusCode: 401,
+  errors: undefined
+}
+[0mGET /api/auth/profile [33m401[0m 3.658 ms - 50[0m
+AppError: Token tidak tersedia
+    at authMiddleware (file:///C:/Users/LOQ/playgroundQA/qa-lab/backend/src/middlewares/auth.middleware.js:8:47)
+    at Layer.handleRequest (C:\Users\LOQ\playgroundQA\qa-lab\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (C:\Users\LOQ\playgroundQA\qa-lab\backend\node_modules\router\index.js:342:13)
+    at C:\Users\LOQ\playgroundQA\qa-lab\backend\node_modules\router\index.js:297:9
+    at processParams (C:\Users\LOQ\playgroundQA\qa-lab\backend\node_modules\router\index.js:582:12)
+    at next (C:\Users\LOQ\playgroundQA\qa-lab\backend\node_modules\router\index.js:291:5)
+    at Function.handle (C:\Users\LOQ\playgroundQA\qa-lab\backend\node_modules\router\index.js:186:3)
+    at router (C:\Users\LOQ\playgroundQA\qa-lab\backend\node_modules\router\index.js:60:12)
+    at Layer.handleRequest (C:\Users\LOQ\playgroundQA\qa-lab\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (C:\Users\LOQ\playgroundQA\qa-lab\backend\node_modules\router\index.js:342:13) {
+  statusCode: 401,
+  errors: undefined
+}
+[0mGET /api/invoices [33m401[0m 2.061 ms - 50[0m
+AppError: Token tidak tersedia
+    at authMiddleware (file:///C:/Users/LOQ/playgroundQA/qa-lab/backend/src/middlewares/auth.middleware.js:8:47)
+    at Layer.handleRequest (C:\Users\LOQ\playgroundQA\qa-lab\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (C:\Users\LOQ\playgroundQA\qa-lab\backend\node_modules\router\index.js:342:13)
+    at C:\Users\LOQ\playgroundQA\qa-lab\backend\node_modules\router\index.js:297:9
+    at processParams (C:\Users\LOQ\playgroundQA\qa-lab\backend\node_modules\router\index.js:582:12)
+    at next (C:\Users\LOQ\playgroundQA\qa-lab\backend\node_modules\router\index.js:291:5)
+    at Function.handle (C:\Users\LOQ\playgroundQA\qa-lab\backend\node_modules\router\index.js:186:3)
+    at router (C:\Users\LOQ\playgroundQA\qa-lab\backend\node_modules\router\index.js:60:12)
+    at Layer.handleRequest (C:\Users\LOQ\playgroundQA\qa-lab\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (C:\Users\LOQ\playgroundQA\qa-lab\backend\node_modules\router\index.js:342:13) {
+  statusCode: 401,
+  errors: undefined
+}
+[0mGET /api/invoices [33m401[0m 0.940 ms - 50[0m
+[0mPOST /api/auth/login [32m200[0m 190.245 ms - 362[0m
+[0mGET /api/invoices [36m304[0m 118.163 ms - -[0m
+[0mGET /api/docs/openapi.json [36m304[0m 0.511 ms - -[0m
+[0mGET /.well-known/appspecific/com.chrome.devtools.json [33m404[0m 0.496 ms - 54[0m
+[0mGET /swagger/swagger-ui [33m404[0m 0.832 ms - 54[0m
+[0mGET /.well-known/appspecific/com.chrome.devtools.json [33m404[0m 0.358 ms - 54[0m
+[0mGET /swagger/swagger-ui [33m404[0m 2.102 ms - 54[0m
+[0mGET /.well-known/appspecific/com.chrome.devtools.json [33m404[0m 0.271 ms - 54[0m
+[0mGET /swagger/swagger-ui. [33m404[0m 1.630 ms - 54[0m
+[0mGET /.well-known/appspecific/com.chrome.devtools.json [33m404[0m 0.327 ms - 54[0m
+[0mGET /swagger/swagger-ui. [33m404[0m 1.731 ms - 54[0m
+[0mGET /.well-known/appspecific/com.chrome.devtools.json [33m404[0m 0.261 ms - 54[0m
+[0mGET /swagger/swagger-ui.css [36m304[0m 1.355 ms - -[0m
+[0mGET /.well-known/appspecific/com.chrome.devtools.json [33m404[0m 0.435 ms - 54[0m

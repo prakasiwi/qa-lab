@@ -29,6 +29,8 @@ Akses:
 - Frontend: http://localhost:5173
 - Backend health: http://localhost:3001/api/health
 - Swagger: http://localhost:3001/api/docs
+- OpenAPI JSON: http://localhost:3001/api/docs/openapi.json
+- Swagger assets: http://localhost:3001/swagger/swagger-ui.css
 
 ## API Documentation URL
 
@@ -53,6 +55,8 @@ Backend Swagger server URL example:
 ```env
 PUBLIC_API_URL=https://qa-lab-api.com/api
 ```
+
+Swagger UI assets are copied from `swagger-ui-dist` to `backend/public/swagger` by backend `postinstall`. On Vercel, redeploy the backend after dependency or environment changes and verify `/swagger/swagger-ui.css` and `/swagger/swagger-ui-bundle.js` return CSS/JavaScript, not HTML.
 
 Set the variable in the correct Vercel frontend project:
 
