@@ -28,7 +28,7 @@ export const swaggerSpec = swaggerJsdoc({
           type: 'object',
           required: ['email', 'password'],
           properties: {
-            email: { type: 'string', format: 'email', example: 'admin@example.com' },
+            email: { type: 'string', format: 'email', example: 'admin@qalab.id' },
             password: { type: 'string', example: 'password123' },
           },
         },

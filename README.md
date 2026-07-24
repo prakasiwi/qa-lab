@@ -4,7 +4,7 @@ Aplikasi pembelajaran QA dengan simple invoice dan master data.
 
 ## Login Seed
 
-- Email: `admin@example.com`
+- Email: `admin@qalab.id`
 - Password: `password123`
 
 ## Run Local

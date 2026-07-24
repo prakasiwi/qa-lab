@@ -8,7 +8,7 @@ import qaLabLogo from "../assets/logo.png";
 export function LoginPage() {
   const navigate = useNavigate();
   const [form, setForm] = useState({
-    email: "admin@example.com",
+    email: "admin@qalab.id",
     password: "password123",
   });
   const [showPassword, setShowPassword] = useState(false);
@@ -80,7 +80,7 @@ export function LoginPage() {
                 autoComplete="email"
                 value={form.email}
                 onChange={(event) => update("email", event.target.value)}
-                placeholder="admin@example.com"
+                placeholder="admin@qalab.id"
                 required
               />
             </div>
@@ -119,7 +119,7 @@ export function LoginPage() {
             <Info size={17} aria-hidden="true" />
             <span>
               Default account:
-              <strong>admin@example.com / password123</strong>
+              <strong>admin@qalab.id / password123</strong>
             </span>
           </div>
         </form>
