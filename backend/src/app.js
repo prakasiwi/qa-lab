@@ -18,6 +18,22 @@ const app = express();
 const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
 const swaggerAssetsPath = path.resolve(currentDirectory, "../public/swagger");
 
+function getPublicApiUrl(req) {
+  const configuredUrl = process.env.PUBLIC_API_URL?.trim();
+  if (configuredUrl) return configuredUrl;
+
+  const forwardedProto = req.get("x-forwarded-proto")?.split(",")[0]?.trim();
+  const protocol = forwardedProto || req.protocol;
+  return `${protocol}://${req.get("host")}/api`;
+}
+
+function buildSwaggerSpec(req) {
+  return {
+    ...swaggerSpec,
+    servers: [{ url: getPublicApiUrl(req) }],
+  };
+}
+
 app.use(helmet());
 
 app.use(
@@ -40,8 +56,12 @@ app.get("/api/health", (req, res) => {
   });
 });
 
+app.get("/favicon.ico", (req, res) => {
+  res.status(204).end();
+});
+
 app.get("/api/docs/openapi.json", (req, res) => {
-  res.json(swaggerSpec);
+  res.json(buildSwaggerSpec(req));
 });
 
 app.get(["/api/docs", "/api/docs/"], (req, res) => {

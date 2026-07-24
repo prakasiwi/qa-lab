@@ -10,6 +10,7 @@ const targetDirectory = path.resolve(process.cwd(), "public/swagger");
 
 const assets = [
   "swagger-ui.css",
+  "swagger-ui.css.map",
   "swagger-ui-bundle.js",
   "swagger-ui-standalone-preset.js",
 ];

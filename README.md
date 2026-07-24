@@ -58,6 +58,8 @@ PUBLIC_API_URL=https://qa-lab-api.com/api
 
 Swagger UI assets are copied from `swagger-ui-dist` to `backend/public/swagger` by backend `postinstall`. On Vercel, redeploy the backend after dependency or environment changes and verify `/swagger/swagger-ui.css` and `/swagger/swagger-ui-bundle.js` return CSS/JavaScript, not HTML.
 
+If Swagger "Try it out" calls localhost in production, set backend `PUBLIC_API_URL` to the deployed API URL, for example `https://qa-lab-api.vercel.app/api`, then redeploy. If `PUBLIC_API_URL` is not set, `/api/docs/openapi.json` derives the API server URL from the current request host. Swagger UI online validator is disabled to avoid external validator image calls being blocked by Helmet CSP.
+
 Set the variable in the correct Vercel frontend project:
 
 ```text
