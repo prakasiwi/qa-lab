@@ -1,6 +1,6 @@
-# SMK Invoice Lab
+# QA Lab
 
-Aplikasi pembelajaran QA untuk siswa SMK dan onboarding QA internal.
+Aplikasi pembelajaran QA dengan simple invoice dan master data.
 
 ## Login Seed
 
