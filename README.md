@@ -37,13 +37,21 @@ Sidebar menu **API Documentation** opens Swagger in a new browser tab using the 
 Local development example:
 
 ```env
+VITE_API_BASE_URL=http://localhost:3001/api
 VITE_API_DOCS_URL=http://localhost:3001/api/docs/
 ```
 
 Vercel Preview/Production example:
 
 ```env
-VITE_API_DOCS_URL=https://your-public-api-domain.com/api/docs/
+VITE_API_BASE_URL=https://qa-lab-api.com/api
+VITE_API_DOCS_URL=https://qa-lab-api.com/api/docs/
+```
+
+Backend Swagger server URL example:
+
+```env
+PUBLIC_API_URL=https://qa-lab-api.com/api
 ```
 
 Set the variable in the correct Vercel frontend project:

@@ -1,5 +1,7 @@
 import swaggerJsdoc from 'swagger-jsdoc';
 
+const publicApiUrl = process.env.PUBLIC_API_URL?.trim() || 'http://localhost:3001/api';
+
 export const swaggerSpec = swaggerJsdoc({
   definition: {
     openapi: '3.0.0',
@@ -8,7 +10,7 @@ export const swaggerSpec = swaggerJsdoc({
       version: '1.0.0',
       description: 'API documentation for QA Lab authentication, master data, invoices, and dashboard.',
     },
-    servers: [{ url: 'http://localhost:3001/api' }],
+    servers: [{ url: publicApiUrl }],
     tags: [
       { name: 'Health' },
       { name: 'Auth' },
