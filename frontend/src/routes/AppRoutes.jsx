@@ -2,6 +2,7 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { ProtectedRoute } from '../components/ProtectedRoute';
 import { DashboardPage } from '../pages/DashboardPage';
 import { LoginPage } from '../pages/LoginPage';
+import { DashboardLayout } from '../layouts/DashboardLayout';
 import { CustomerDetailPage } from '../pages/customers/CustomerDetailPage';
 import { CustomerFormPage } from '../pages/customers/CustomerFormPage';
 import CustomersPage from '../pages/customers/CustomersPage';
@@ -32,7 +33,24 @@ export function AppRoutes() {
         <Route path="/invoices" element={protectedPage(<InvoicesPage />)} />
         <Route path="/invoices/new" element={protectedPage(<CreateInvoicePage />)} />
         <Route path="/invoices/:id" element={protectedPage(<InvoiceDetailPage />)} />
+        <Route path="*" element={protectedPage(<NotFoundPage />)} />
       </Routes>
     </BrowserRouter>
+  );
+}
+
+function NotFoundPage() {
+  return (
+    <DashboardLayout>
+      <div className="breadcrumb">Not Found</div>
+      <div className="page-head">
+        <div>
+          <h1>Page Not Found</h1>
+        </div>
+      </div>
+      <section className="surface full">
+        <p className="muted">The page you requested does not exist.</p>
+      </section>
+    </DashboardLayout>
   );
 }
