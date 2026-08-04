@@ -7,6 +7,7 @@ import { ok } from '../../utils/response.js';
 
 const router = Router();
 const statuses = ['DRAFT', 'SUBMITTED', 'PAID', 'CANCELLED'];
+const revenueStatuses = ['PAID', 'DRAFT', 'CANCELLED'];
 const monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 router.use(authMiddleware);
@@ -25,7 +26,7 @@ router.get('/', asyncHandler(async (req, res) => {
     prisma.customer.count({ where: { isActive: true } }),
     prisma.product.count({ where: { isActive: true } }),
     getLowStockCount(),
-    prisma.invoice.aggregate({ where: { status: 'PAID' }, _sum: { grandTotal: true } }),
+    prisma.invoice.aggregate({ where: { status: { in: revenueStatuses } }, _sum: { grandTotal: true } }),
     getMonthlyRevenueRows(),
     prisma.invoice.groupBy({ by: ['status'], _count: { status: true } }),
     prisma.invoice.findMany({
@@ -119,7 +120,7 @@ function getMonthlyRevenueRows() {
       EXTRACT(MONTH FROM COALESCE("paidAt", "updatedAt"))::int AS month,
       COALESCE(SUM("grandTotal"), 0)::numeric AS revenue
     FROM "Invoice"
-    WHERE "status" = 'PAID'
+    WHERE "status" IN ('PAID', 'DRAFT', 'CANCELLED')
       AND EXTRACT(YEAR FROM COALESCE("paidAt", "updatedAt")) = EXTRACT(YEAR FROM CURRENT_DATE)
     GROUP BY month
     ORDER BY month ASC
@@ -147,7 +148,7 @@ async function buildLegacySummary() {
     prisma.invoice.count({ where: { status: 'DRAFT' } }),
     prisma.invoice.count({ where: { status: 'SUBMITTED' } }),
     prisma.invoice.count({ where: { status: 'PAID' } }),
-    prisma.invoice.aggregate({ where: { status: 'PAID' }, _sum: { grandTotal: true } }),
+    prisma.invoice.aggregate({ where: { status: { in: revenueStatuses } }, _sum: { grandTotal: true } }),
   ]);
   return {
     activeCustomers,

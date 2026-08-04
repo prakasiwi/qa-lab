@@ -113,11 +113,11 @@ export function Sidebar({ collapsed, mobileOpen, onToggleCollapse, onCloseMobile
             </button>
             {!displayCollapsed && masterDataOpen && (
               <div className="sidebar-submenu">
-                <NavLink to="/customers" onClick={onCloseMobile} className={({ isActive }) => `sidebar-subitem ${isActive ? "active" : ""}`}>
+                <NavLink to="/products" onClick={onCloseMobile} className={({ isActive }) => `sidebar-subitem ${isActive ? "active" : ""}`}>
                   <Users size={18} />
                   <span>Customers</span>
                 </NavLink>
-                <NavLink to="/products" onClick={onCloseMobile} className={({ isActive }) => `sidebar-subitem ${isActive ? "active" : ""}`}>
+                <NavLink to="/customers" onClick={onCloseMobile} className={({ isActive }) => `sidebar-subitem ${isActive ? "active" : ""}`}>
                   <Package size={18} />
                   <span>Products</span>
                 </NavLink>

@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getActiveCustomers } from "../../api/customerApi";
+import { getInvoiceCustomerOptions } from "../../api/customerApi";
 import { createInvoice } from "../../api/invoiceApi";
-import { getActiveProducts } from "../../api/productApi";
+import { getInvoiceProductOptions } from "../../api/productApi";
 import { Alert } from "../../components/Alert";
 import { Field } from "../../components/Field";
 import { DashboardLayout } from "../../layouts/DashboardLayout";
@@ -33,7 +33,7 @@ function CreateInvoicePage() {
     let active = true;
     setLoading(true);
     setProductLoading(true);
-    Promise.all([getActiveCustomers(), getActiveProducts()])
+    Promise.all([getInvoiceCustomerOptions(), getInvoiceProductOptions()])
       .then(([customerRes, productRes]) => {
         if (!active) return;
         setCustomers(customerRes.data.data.items);
@@ -103,11 +103,8 @@ function CreateInvoicePage() {
       if (used.has(item.productId))
         next[`product-${index}`] = "Produk tidak boleh duplikat";
       used.add(item.productId);
-      const product = productMap.get(item.productId);
-      if (!Number.isInteger(Number(item.quantity)) || Number(item.quantity) < 1)
-        next[`quantity-${index}`] = "Quantity minimal 1 dan integer";
-      else if (product && Number(item.quantity) > Number(product.availableStock || 0))
-        next[`quantity-${index}`] = "Quantity tidak boleh melebihi Available Stock";
+      if (!Number.isInteger(Number(item.quantity)))
+        next[`quantity-${index}`] = "Quantity harus integer";
       if (
         Number(item.discountPercent) < 0 ||
         Number(item.discountPercent) > 100
@@ -339,8 +336,6 @@ function ProductRow({
       <td>
         <input
           type="number"
-          min="1"
-          max={product?.availableStock ?? undefined}
           step="1"
           value={item.quantity}
           onChange={(e) => setItem(index, "quantity", e.target.value)}
