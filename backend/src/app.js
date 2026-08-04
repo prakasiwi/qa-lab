@@ -56,7 +56,7 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-app.get("/favicon.ico", (req, res) => {
+app.get(["/favicon.ico", "/favicon.png"], (req, res) => {
   res.status(204).end();
 });
 

@@ -2,13 +2,10 @@ import "dotenv/config";
 import bcrypt from "bcrypt";
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
-
-if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL belum dikonfigurasi");
-}
+import { getDatabaseUrl } from "../src/config/databaseUrl.js";
 
 const adapter = new PrismaPg({
-  connectionString: process.env.DATABASE_URL,
+  connectionString: getDatabaseUrl(),
 });
 
 const prisma = new PrismaClient({
