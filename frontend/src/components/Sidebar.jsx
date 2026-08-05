@@ -4,12 +4,12 @@ import {
   ChevronDown,
   ChevronRight,
   Database,
-  ExternalLink,
+  // ExternalLink,
   FileText,
   LayoutDashboard,
   LogOut,
   Package,
-  BookOpen,
+  // BookOpen,
   PanelLeftClose,
   PanelLeftOpen,
   ReceiptText,
@@ -28,7 +28,7 @@ export function Sidebar({ collapsed, mobileOpen, onToggleCollapse, onCloseMobile
   const masterDataActive = location.pathname.startsWith("/customers") || location.pathname.startsWith("/products");
   const transactionsActive = location.pathname.startsWith("/invoices");
   const dashboardActive = location.pathname === "/" || location.pathname.startsWith("/dashboard");
-  const apiDocsUrl = import.meta.env.VITE_API_DOCS_URL?.trim();
+  // const apiDocsUrl = import.meta.env.VITE_API_DOCS_URL?.trim();
 
   useEffect(() => {
     if (masterDataActive) setMasterDataOpen(true);
@@ -49,15 +49,15 @@ export function Sidebar({ collapsed, mobileOpen, onToggleCollapse, onCloseMobile
     onCloseMobile();
   }
 
-  function handleApiDocsClick(event) {
-    if (!apiDocsUrl) {
-      event.preventDefault();
-      window.alert("API Documentation URL belum dikonfigurasi.");
-      return;
-    }
+  // function handleApiDocsClick(event) {
+  //   if (!apiDocsUrl) {
+  //     event.preventDefault();
+  //     window.alert("API Documentation URL belum dikonfigurasi.");
+  //     return;
+  //   }
 
-    onCloseMobile();
-  }
+  //   onCloseMobile();
+  // }
 
   return (
     <>
@@ -152,7 +152,7 @@ export function Sidebar({ collapsed, mobileOpen, onToggleCollapse, onCloseMobile
             )}
           </div>
 
-          <a
+          {/* <a
             href={apiDocsUrl || "#"}
             target="_blank"
             rel="noopener noreferrer"
@@ -169,7 +169,7 @@ export function Sidebar({ collapsed, mobileOpen, onToggleCollapse, onCloseMobile
                 <ExternalLink size={18} className="sidebar-external-icon" aria-hidden="true" />
               </>
             )}
-          </a>
+          </a> */}
         </nav>
 
         <div className="sidebar-footer">
