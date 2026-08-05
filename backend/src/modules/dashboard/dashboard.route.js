@@ -82,7 +82,7 @@ function lowStockWhereSql() {
     "isActive" = true
     AND (
       ("initialStock" = 0 AND "availableStock" = 0)
-      OR ("initialStock" > 0 AND ("availableStock" * 100) <= ("initialStock" * 20))
+      OR ("initialStock" > 0 AND ("availableStock"::numeric * 100) <= ("initialStock"::numeric * 20))
     )
   `;
 }
