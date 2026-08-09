@@ -1,16 +1,17 @@
 import Joi from 'joi';
+import { DECIMAL_5_2_MAX, MONEY_SCALE, POSTGRES_INT_MAX } from '../../utils/dbConstraints.js';
 
 const item = Joi.object({
   productId: Joi.string().required(),
-  quantity: Joi.number().integer().min(1).required(),
-  discountPercent: Joi.number().min(0).max(100).default(0),
+  quantity: Joi.number().strict().integer().min(1).max(POSTGRES_INT_MAX).required(),
+  discountPercent: Joi.number().strict().min(0).max(100).max(DECIMAL_5_2_MAX).precision(MONEY_SCALE).default(0),
 });
 
 export const invoiceSchema = Joi.object({
   customerId: Joi.string().required(),
-  issueDate: Joi.date().required(),
-  invoiceDate: Joi.date().optional(),
-  dueDate: Joi.date().required(),
+  issueDate: Joi.string().isoDate().required(),
+  invoiceDate: Joi.string().isoDate().optional(),
+  dueDate: Joi.string().isoDate().required(),
   additionalInfo: Joi.string().max(500).allow('', null),
   notes: Joi.string().max(500).allow('', null),
   items: Joi.array().items(item).min(1).required(),

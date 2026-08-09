@@ -1,12 +1,12 @@
 import { Router } from 'express';
 import { authMiddleware } from '../../middlewares/auth.middleware.js';
-import { validate } from '../../middlewares/validation.middleware.js';
+import { validate, validateQuery } from '../../middlewares/validation.middleware.js';
 import { asyncHandler } from '../../utils/asyncHandler.js';
 import * as c from './product.controller.js';
-import { productSchema, statusSchema } from './product.validation.js';
+import { productListQuerySchema, productSchema, statusSchema } from './product.validation.js';
 const router = Router();
 router.use(authMiddleware);
-router.get('/', asyncHandler(c.listProducts));
+router.get('/', validateQuery(productListQuerySchema), asyncHandler(c.listProducts));
 router.get('/:id', asyncHandler(c.getProduct));
 router.post('/', validate(productSchema), asyncHandler(c.createProduct));
 router.put('/:id', validate(productSchema), asyncHandler(c.updateProduct));

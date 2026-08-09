@@ -19,7 +19,7 @@ async function ensureUniqueCode(customerCode, exceptId) {
 }
 
 export const listCustomers = async (req, res) => {
-  const { search = '', page = 1, limit = 10, status } = req.query;
+  const { search = '', page = 1, limit = 10, status } = req.validatedQuery ?? req.query;
   const skip = (Number(page) - 1) * Number(limit);
   const where = {
     ...(status === 'active' ? { isActive: true } : {}),

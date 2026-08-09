@@ -1,11 +1,23 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from '../../config/prisma.js';
 import { AppError } from '../../utils/AppError.js';
+import { DECIMAL_12_2_MAX } from '../../utils/dbConstraints.js';
 import { ok } from '../../utils/response.js';
 
 const taxRate = () => Number(process.env.TAX_PERCENTAGE || 11);
 const money = (n) => Math.round(Number(n) * 100) / 100;
 const toNumber = (v) => Number(v || 0);
+const invoiceDecimalFields = ['subtotal', 'totalDiscount', 'tax', 'grandTotal'];
+const invoiceItemDecimalFields = ['unitPrice', 'discountAmount', 'grossTotal', 'lineTotal', 'subtotal'];
+
+function ensureDecimal12Fits(data, fields, label) {
+  for (const field of fields) {
+    const value = Number(data[field]);
+    if (!Number.isFinite(value) || Math.abs(value) > DECIMAL_12_2_MAX) {
+      throw new AppError(`${label} ${field} melebihi batas maksimal ${DECIMAL_12_2_MAX}`, 422);
+    }
+  }
+}
 
 const mapInvoice = (i) => i && ({
   ...i,
@@ -106,8 +118,12 @@ async function buildInvoiceData(body) {
     if (!product) throw new AppError('Produk tidak ditemukan', 404);
     if (!product.isActive) throw new AppError('Produk harus aktif', 422);
     if (item.quantity > product.availableStock) throw new AppError('Quantity tidak boleh melebihi Available Stock', 422);
-    return calculateInvoiceItem(product, item);
+    const invoiceItem = calculateInvoiceItem(product, item);
+    ensureDecimal12Fits(invoiceItem, invoiceItemDecimalFields, 'Invoice item');
+    return invoiceItem;
   });
+  const summary = calculateInvoiceSummary(items);
+  ensureDecimal12Fits(summary, invoiceDecimalFields, 'Invoice');
 
   return {
     customerId: customer.id,
@@ -117,7 +133,7 @@ async function buildInvoiceData(body) {
     issueDate,
     dueDate,
     additionalInfo: body.additionalInfo || body.notes || null,
-    ...calculateInvoiceSummary(items),
+    ...summary,
     items,
   };
 }
