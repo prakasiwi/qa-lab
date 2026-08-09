@@ -1,6 +1,6 @@
 import { api } from './apiClient';
 
-export const getInvoices = () => api.get('/invoices');
+export const getInvoices = (params = {}) => api.get('/invoices', { params });
 export const getInvoice = (id) => api.get(`/invoices/${id}`);
 export const getInvoiceById = getInvoice;
 export const createInvoice = (payload) => api.post('/invoices', payload);

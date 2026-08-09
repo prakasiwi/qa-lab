@@ -1,9 +1,9 @@
 import Joi from 'joi';
 import { POSTGRES_INT_MAX } from '../../utils/dbConstraints.js';
 
-export const customerSchema = Joi.object({
-  customerCode: Joi.string().trim().min(1).required().messages({
-    'string.empty': 'Customer Code wajib diisi',
+const customerPayloadFields = {
+  customerCode: Joi.forbidden().messages({
+    'any.unknown': 'Customer Code dibuat otomatis dan tidak boleh dikirim',
   }),
   customerName: Joi.string().trim().min(3).max(150).required().messages({
     'string.empty': 'Customer Name wajib diisi',
@@ -21,13 +21,19 @@ export const customerSchema = Joi.object({
     'string.max': 'Address maksimal 500 karakter',
   }),
   isActive: Joi.boolean().strict().required(),
-});
+};
+
+export const createCustomerSchema = Joi.object(customerPayloadFields);
+
+export const updateCustomerSchema = Joi.object(customerPayloadFields);
+
+export const customerSchema = createCustomerSchema;
 
 export const statusSchema = Joi.object({ isActive: Joi.boolean().strict().required() });
 
 export const customerListQuerySchema = Joi.object({
   search: Joi.string().trim().max(150).allow('').default(''),
   page: Joi.number().integer().min(1).max(POSTGRES_INT_MAX).default(1),
-  limit: Joi.number().integer().min(1).max(100).default(10),
+  limit: Joi.number().integer().valid(10, 25, 50, 100).default(10),
   status: Joi.string().valid('active', 'inactive').optional(),
 });

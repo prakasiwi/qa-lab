@@ -120,6 +120,25 @@ async function seedCustomers() {
   console.log(`✓ ${customers.length} customer berhasil dibuat`);
 }
 
+async function syncCustomerCounter() {
+  const customers = await prisma.customer.findMany({
+    select: { customerCode: true },
+  });
+  const maxSequence = customers.reduce((max, customer) => {
+    const match = /^CUST-(\d+)$/.exec(customer.customerCode);
+    if (!match) return max;
+    return Math.max(max, Number(match[1]));
+  }, 0);
+
+  await prisma.customerCounter.upsert({
+    where: { key: "CUSTOMER" },
+    update: { nextNumber: maxSequence + 1 },
+    create: { key: "CUSTOMER", nextNumber: maxSequence + 1 },
+  });
+
+  console.log(`Customer counter disinkronkan ke ${maxSequence + 1}`);
+}
+
 async function seedProducts() {
   const products = [
     {
@@ -183,12 +202,214 @@ async function seedProducts() {
   console.log(`✓ ${products.length} product berhasil dibuat`);
 }
 
+const money = (value) => Math.round(Number(value) * 100) / 100;
+const taxRate = () => Number(process.env.TAX_PERCENTAGE || 11);
+
+function calculateSeedInvoiceItem(product, item) {
+  const quantity = Number(item.quantity);
+  const discountPercent = Number(item.discountPercent || 0);
+  const unitPrice = Number(product.price);
+  const grossTotal = money(quantity * unitPrice);
+  const discountAmount = money(grossTotal * discountPercent / 100);
+  const lineTotal = money(grossTotal - discountAmount);
+
+  return {
+    productId: product.id,
+    productCodeSnapshot: product.productCode,
+    productNameSnapshot: product.productName,
+    quantity,
+    unitPrice,
+    discountPercent,
+    discountAmount,
+    grossTotal,
+    lineTotal,
+    subtotal: lineTotal,
+  };
+}
+
+function calculateSeedInvoiceSummary(items) {
+  const subtotal = money(items.reduce((sum, item) => sum + item.grossTotal, 0));
+  const totalDiscount = money(items.reduce((sum, item) => sum + item.discountAmount, 0));
+  const taxableAmount = money(subtotal - totalDiscount);
+  const rate = taxRate();
+  const tax = money(taxableAmount * rate / 100);
+  const grandTotal = money(taxableAmount + tax);
+  return { subtotal, totalDiscount, taxRate: rate, tax, grandTotal };
+}
+
+async function createSeedInvoice({ invoiceNumber, customerCode, productCode, quantity, discountPercent = 0, status, additionalInfo, issueDate, dueDate, createdBy }) {
+  const customer = await prisma.customer.findUnique({ where: { customerCode } });
+  const product = await prisma.product.findUnique({ where: { productCode } });
+
+  if (!customer) throw new Error(`Customer seed ${customerCode} tidak ditemukan`);
+  if (!product) throw new Error(`Product seed ${productCode} tidak ditemukan`);
+
+  const item = calculateSeedInvoiceItem(product, { quantity, discountPercent });
+  const summary = calculateSeedInvoiceSummary([item]);
+  const submittedAt = ['SUBMITTED', 'PAID'].includes(status) ? new Date(`${issueDate}T09:00:00.000Z`) : null;
+  const paidAt = status === 'PAID' ? new Date(`${issueDate}T10:00:00.000Z`) : null;
+  const cancelledAt = status === 'CANCELLED' ? new Date(`${issueDate}T11:00:00.000Z`) : null;
+
+  const invoice = await prisma.invoice.create({
+    data: {
+      invoiceNumber,
+      customerId: customer.id,
+      customerCodeSnapshot: customer.customerCode,
+      customerNameSnapshot: customer.customerName,
+      customerAddressSnapshot: customer.address,
+      issueDate: new Date(`${issueDate}T00:00:00.000Z`),
+      dueDate: new Date(`${dueDate}T00:00:00.000Z`),
+      status,
+      additionalInfo,
+      subtotal: summary.subtotal,
+      totalDiscount: summary.totalDiscount,
+      taxRate: summary.taxRate,
+      tax: summary.tax,
+      grandTotal: summary.grandTotal,
+      submittedAt,
+      paidAt,
+      cancelledAt,
+      createdBy,
+      items: { create: [item] },
+    },
+  });
+
+  await prisma.invoiceHistory.create({
+    data: {
+      invoiceId: invoice.id,
+      previousStatus: null,
+      currentStatus: 'DRAFT',
+      action: 'CREATED',
+      performedBy: createdBy,
+    },
+  });
+
+  if (status === 'SUBMITTED') {
+    await prisma.invoiceHistory.create({
+      data: { invoiceId: invoice.id, previousStatus: 'DRAFT', currentStatus: 'SUBMITTED', action: 'SUBMIT', performedBy: createdBy },
+    });
+  }
+
+  if (status === 'PAID') {
+    await prisma.invoiceHistory.createMany({
+      data: [
+        { invoiceId: invoice.id, previousStatus: 'DRAFT', currentStatus: 'SUBMITTED', action: 'SUBMIT', performedBy: createdBy },
+        { invoiceId: invoice.id, previousStatus: 'SUBMITTED', currentStatus: 'PAID', action: 'PAY', performedBy: createdBy },
+      ],
+    });
+  }
+
+  if (status === 'CANCELLED') {
+    await prisma.invoiceHistory.create({
+      data: { invoiceId: invoice.id, previousStatus: 'DRAFT', currentStatus: 'CANCELLED', action: 'CANCEL', performedBy: createdBy },
+    });
+  }
+
+  return invoice;
+}
+
+async function syncProductAvailableStock() {
+  const products = await prisma.product.findMany({
+    include: {
+      invoiceItems: {
+        include: { invoice: true },
+      },
+    },
+  });
+
+  for (const product of products) {
+    const usedStock = product.invoiceItems
+      .filter((item) => ['SUBMITTED', 'PAID'].includes(item.invoice.status))
+      .reduce((sum, item) => sum + item.quantity, 0);
+
+    await prisma.product.update({
+      where: { id: product.id },
+      data: { availableStock: Math.max(0, product.initialStock - usedStock) },
+    });
+  }
+}
+
+async function seedInvoices() {
+  const admin = await prisma.user.findUnique({ where: { email: "admin@qalab.id" } });
+  if (!admin) throw new Error("Admin user seed tidak ditemukan");
+
+  const invoices = [
+    {
+      invoiceNumber: "INV-202608-000001",
+      customerCode: "CUST-001",
+      productCode: "PROD-001",
+      quantity: 1,
+      status: "DRAFT",
+      additionalInfo: "Seed invoice status DRAFT untuk latihan QA.",
+      issueDate: "2026-08-01",
+      dueDate: "2026-08-08",
+    },
+    {
+      invoiceNumber: "INV-202608-000002",
+      customerCode: "CUST-002",
+      productCode: "PROD-002",
+      quantity: 1,
+      discountPercent: 5,
+      status: "SUBMITTED",
+      additionalInfo: "Seed invoice status SUBMITTED untuk latihan QA.",
+      issueDate: "2026-08-02",
+      dueDate: "2026-08-09",
+    },
+    {
+      invoiceNumber: "INV-202608-000003",
+      customerCode: "CUST-003",
+      productCode: "PROD-003",
+      quantity: 2,
+      discountPercent: 10,
+      status: "PAID",
+      additionalInfo: "Seed invoice status PAID untuk latihan QA.",
+      issueDate: "2026-08-03",
+      dueDate: "2026-08-10",
+    },
+    {
+      invoiceNumber: "INV-202608-000004",
+      customerCode: "CUST-004",
+      productCode: "PROD-004",
+      quantity: 1,
+      status: "CANCELLED",
+      additionalInfo: "Seed invoice status CANCELLED untuk latihan QA.",
+      issueDate: "2026-08-04",
+      dueDate: "2026-08-11",
+    },
+  ];
+  const invoiceNumbers = invoices.map((invoice) => invoice.invoiceNumber);
+
+  await prisma.invoice.deleteMany({
+    where: {
+      OR: [
+        { invoiceNumber: { in: invoiceNumbers } },
+        { invoiceNumber: { startsWith: "INV-SEED-" } },
+      ],
+    },
+  });
+
+  for (const invoice of invoices) {
+    await createSeedInvoice({ ...invoice, createdBy: admin.id });
+  }
+
+  await syncProductAvailableStock();
+  await prisma.invoiceCounter.upsert({
+    where: { period: "202608" },
+    update: { nextNumber: invoices.length + 1 },
+    create: { period: "202608", nextNumber: invoices.length + 1 },
+  });
+
+  console.log(`${invoices.length} invoice seed berhasil dibuat`);
+}
+
 async function main() {
   console.log("Memulai proses seed...");
 
   await seedUsers();
   await seedCustomers();
+  await syncCustomerCounter();
   await seedProducts();
+  await seedInvoices();
 
   console.log("✓ Seluruh proses seed selesai");
 }

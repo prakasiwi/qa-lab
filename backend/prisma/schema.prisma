@@ -37,7 +37,7 @@ model Customer {
   id           String   @id @default(cuid())
   customerCode String   @unique
   customerName String
-  email        String
+  email        String   @unique
   phone        String?
   address      String
   isActive     Boolean  @default(true)
@@ -45,6 +45,12 @@ model Customer {
   updatedAt    DateTime @updatedAt
 
   invoices Invoice[]
+}
+
+model CustomerCounter {
+  key        String   @id
+  nextNumber Int      @default(1)
+  updatedAt  DateTime @updatedAt
 }
 
 model Product {

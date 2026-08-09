@@ -32,13 +32,23 @@ export const swaggerSpec = swaggerJsdoc({
             password: { type: 'string', example: 'password123' },
           },
         },
-        CustomerRequest: {
+        CreateCustomerRequest: {
           type: 'object',
-          required: ['customerCode', 'customerName', 'email', 'address', 'isActive'],
+          required: ['customerName', 'email', 'address', 'isActive'],
           properties: {
-            customerCode: { type: 'string', example: 'CUST-003' },
             customerName: { type: 'string', example: 'PT Belajar QA' },
-            email: { type: 'string', format: 'email', example: 'finance@example.com' },
+            email: { type: 'string', format: 'email', description: 'Must be unique across customers.', example: 'finance@example.com' },
+            phone: { type: 'string', nullable: true, example: '08123456789' },
+            address: { type: 'string', example: 'Jl. Pendidikan No. 1, Jakarta' },
+            isActive: { type: 'boolean', example: true },
+          },
+        },
+        UpdateCustomerRequest: {
+          type: 'object',
+          required: ['customerName', 'email', 'address', 'isActive'],
+          properties: {
+            customerName: { type: 'string', example: 'PT Belajar QA' },
+            email: { type: 'string', format: 'email', description: 'Must be unique across customers.', example: 'finance@example.com' },
             phone: { type: 'string', nullable: true, example: '08123456789' },
             address: { type: 'string', example: 'Jl. Pendidikan No. 1, Jakarta' },
             isActive: { type: 'boolean', example: true },
@@ -133,14 +143,24 @@ export const swaggerSpec = swaggerJsdoc({
           responses: { 200: { description: 'Logout berhasil' }, 401: { $ref: '#/components/responses/Unauthorized' } },
         },
       },
-      '/customers': collectionPaths('Customers', 'CustomerRequest'),
-      '/customers/{id}': entityPaths('Customers', 'CustomerRequest'),
+      '/customers': {
+        get: paginatedOperation('Customers', 'List customers'),
+        post: bodyOperation('Customers', 'Create customer with auto-generated code', 'CreateCustomerRequest'),
+      },
+      '/customers/{id}': {
+        get: securedOperation('Customers', 'Get customer detail', true),
+        put: bodyOperation('Customers', 'Update customer', 'UpdateCustomerRequest', true),
+        delete: securedOperation('Customers', 'Delete customer', true),
+      },
       '/customers/{id}/status': statusPath('Customers'),
-      '/products': collectionPaths('Products', 'ProductRequest'),
+      '/products': {
+        get: paginatedOperation('Products', 'List products'),
+        post: bodyOperation('Products', 'Create product', 'ProductRequest'),
+      },
       '/products/{id}': entityPaths('Products', 'ProductRequest'),
       '/products/{id}/status': statusPath('Products'),
       '/invoices': {
-        get: securedOperation('Invoices', 'List invoices'),
+        get: paginatedOperation('Invoices', 'List invoices'),
         post: bodyOperation('Invoices', 'Create invoice draft', 'InvoiceRequest'),
       },
       '/invoices/{id}': {
@@ -180,6 +200,20 @@ function securedOperation(tag, summary, withId = false) {
       401: { $ref: '#/components/responses/Unauthorized' },
       ...(withId ? { 404: { $ref: '#/components/responses/NotFound' } } : {}),
     },
+  };
+}
+
+function paginationParams() {
+  return [
+    { name: 'page', in: 'query', required: false, schema: { type: 'integer', minimum: 1, default: 1 } },
+    { name: 'limit', in: 'query', required: false, schema: { type: 'integer', enum: [10, 25, 50, 100], default: 10 } },
+  ];
+}
+
+function paginatedOperation(tag, summary) {
+  return {
+    ...securedOperation(tag, summary),
+    parameters: paginationParams(),
   };
 }
 

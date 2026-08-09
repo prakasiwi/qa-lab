@@ -1,12 +1,12 @@
 import { Router } from 'express';
 import { authMiddleware } from '../../middlewares/auth.middleware.js';
-import { validate } from '../../middlewares/validation.middleware.js';
+import { validate, validateQuery } from '../../middlewares/validation.middleware.js';
 import { asyncHandler } from '../../utils/asyncHandler.js';
 import * as c from './invoice.controller.js';
-import { invoiceSchema } from './invoice.validation.js';
+import { invoiceListQuerySchema, invoiceSchema } from './invoice.validation.js';
 const router = Router();
 router.use(authMiddleware);
-router.get('/', asyncHandler(c.listInvoices));
+router.get('/', validateQuery(invoiceListQuerySchema), asyncHandler(c.listInvoices));
 router.get('/:id', asyncHandler(c.getInvoice));
 router.post('/', validate(invoiceSchema), asyncHandler(c.createInvoice));
 router.put('/:id', validate(invoiceSchema), asyncHandler(c.updateInvoice));

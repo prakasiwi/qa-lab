@@ -16,3 +16,8 @@ export const invoiceSchema = Joi.object({
   notes: Joi.string().max(500).allow('', null),
   items: Joi.array().items(item).min(1).required(),
 });
+
+export const invoiceListQuerySchema = Joi.object({
+  page: Joi.number().integer().min(1).max(POSTGRES_INT_MAX).default(1),
+  limit: Joi.number().integer().valid(10, 25, 50, 100).default(10),
+});

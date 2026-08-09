@@ -236,6 +236,72 @@ small {
 .table-wrap {
   overflow: auto;
 }
+.table-card {
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: var(--surface-bg);
+}
+.table-card table {
+  margin-top: 0;
+  border-radius: 0;
+}
+.empty-table-cell {
+  padding: 18px 12px;
+  color: var(--text-secondary);
+  text-align: center;
+}
+.pagination-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border-top: 1px solid var(--border-color);
+  padding: 10px 12px;
+  background: var(--surface-bg);
+  color: var(--text-secondary);
+}
+.pagination-summary {
+  font-size: 14px;
+}
+.pagination-controls,
+.pagination-pages,
+.pagination-size {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.pagination-size {
+  font-size: 14px;
+  font-weight: 600;
+}
+.pagination-size select {
+  width: 76px;
+  min-height: 36px;
+  padding: 7px 8px;
+}
+.pagination-icon-button,
+.pagination-page-button {
+  width: 36px;
+  height: 36px;
+  min-height: 36px;
+  padding: 0;
+  border-radius: 8px;
+}
+.pagination-icon-button {
+  border: 1px solid var(--border-color);
+  background: var(--surface-bg);
+  color: var(--text-primary);
+}
+.pagination-icon-button:hover:not(:disabled) {
+  background: var(--surface-soft);
+}
+.pagination-page-button {
+  border: 1px solid var(--brand-blue-600);
+  background: var(--brand-blue-600);
+  color: var(--text-white);
+  font-weight: 700;
+}
 .summary {
   grid-column: 2;
 }
@@ -316,6 +382,18 @@ small {
   .page-head {
     align-items: flex-start;
     flex-direction: column;
+  }
+  .pagination-bar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .pagination-controls {
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
+  .pagination-pages {
+    justify-content: space-between;
   }
 }
 

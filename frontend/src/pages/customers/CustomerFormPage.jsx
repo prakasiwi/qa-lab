@@ -57,13 +57,11 @@ export function CustomerFormPage({ mode = "create" }) {
 
   function validate() {
     const next = {};
-    const code = form.customerCode.trim();
     const name = form.customerName.trim();
     const email = form.email.trim();
     const phone = form.phone.trim();
     const address = form.address.trim();
 
-    if (!code) next.customerCode = "Customer Code wajib diisi";
     if (!name) next.customerName = "Customer Name wajib diisi";
     else if (name.length < 3) next.customerName = "Customer Name minimal 3 karakter";
     else if (name.length > 150) next.customerName = "Customer Name maksimal 150 karakter";
@@ -87,7 +85,6 @@ export function CustomerFormPage({ mode = "create" }) {
     setSubmitting(true);
     try {
       const payload = {
-        customerCode: form.customerCode.trim().toUpperCase(),
         customerName: form.customerName.trim(),
         email: form.email.trim().toLowerCase(),
         phone: form.phone.trim(),
@@ -134,8 +131,8 @@ export function CustomerFormPage({ mode = "create" }) {
         <section className="surface full customer-form-card">
           <h2>Customer Information</h2>
           <div className="two-col">
-            <Field label="Customer Code" required error={errors.customerCode}>
-              <input value={form.customerCode} onChange={(e) => update({ customerCode: e.target.value })} placeholder="CUST-003" />
+            <Field label="Customer Code" error={errors.customerCode}>
+              <input value={form.customerCode} disabled placeholder="Dibuat otomatis setelah disimpan" />
             </Field>
             <Field label="Customer Name" required error={errors.customerName}>
               <input value={form.customerName} onChange={(e) => update({ customerName: e.target.value })} maxLength="150" placeholder="PT Belajar QA" />

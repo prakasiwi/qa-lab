@@ -30,6 +30,6 @@ export const statusSchema = Joi.object({ isActive: Joi.boolean().strict().requir
 export const productListQuerySchema = Joi.object({
   search: Joi.string().trim().max(150).allow('').default(''),
   page: Joi.number().integer().min(1).max(POSTGRES_INT_MAX).default(1),
-  limit: Joi.number().integer().min(1).max(100).default(10),
+  limit: Joi.number().integer().valid(10, 25, 50, 100).default(10),
   status: Joi.string().valid('active', 'inactive').optional(),
 });

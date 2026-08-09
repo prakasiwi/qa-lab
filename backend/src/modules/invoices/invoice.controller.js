@@ -139,8 +139,13 @@ async function buildInvoiceData(body) {
 }
 
 export const listInvoices = async (req, res) => {
-  const rows = await prisma.invoice.findMany({ include: { customer: true }, orderBy: { createdAt: 'desc' } });
-  ok(res, 'Daftar invoice berhasil diambil', rows.map(mapInvoice));
+  const { page = 1, limit = 10 } = req.validatedQuery ?? req.query;
+  const skip = (Number(page) - 1) * Number(limit);
+  const [rows, total] = await Promise.all([
+    prisma.invoice.findMany({ skip, take: Number(limit), include: { customer: true }, orderBy: { createdAt: 'desc' } }),
+    prisma.invoice.count(),
+  ]);
+  ok(res, 'Daftar invoice berhasil diambil', { items: rows.map(mapInvoice), total, page: Number(page), limit: Number(limit) });
 };
 
 export const getInvoice = async (req, res) => {
