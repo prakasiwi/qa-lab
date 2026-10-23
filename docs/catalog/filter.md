@@ -1,0 +1,24 @@
+| ID     | Behavior                    | Aturan Standar                                                                                                                                                      |
+| ------ | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| FLT-01 | Cakupan filter              | Filter menyaring data berdasarkan kriteria tertentu, seperti kategori, status, tanggal, atau rentang nilai                                                          |
+| FLT-02 | Kondisi awal                | Filter mengikuti nilai default yang ditentukan tim. Filter tanpa nilai default berada dalam kondisi tidak membatasi data.                                           |
+| FLT-03 | Pilihan tunggal             | Filter single-select hanya menerima satu pilihan aktif. Pilihan baru menggantikan pilihan sebelumnya.                                                               |
+| FLT-04 | Pilihan jamak               | Filter multi-select dapat menerima beberapa pilihan. Data ditampilkan jika memenuhi salah satu pilihan dalam filter tersebut (*OR*).                              |
+| FLT-05 | Kombinasi antarfilter       | Data harus memenuhi seluruh filter aktif secara bersamaan (*AND*).                                                                                                |
+| FLT-06 | Pemicu penerapan            | Perubahan pilihan diterapkan setelah pengguna mengklik tombol Apply. Sebelum Apply, hasil daftar tetap mengikuti filter yang terakhir diterapkan.                   |
+| FLT-07 | Filter tanpa pilihan        | Filter yang tidak memiliki pilihan tidak membatasi hasil data.                                                                                                      |
+| FLT-08 | Rentang tanggal             | Tanggal awal dan akhir termasuk dalam rentang pencarian. Untuk field yang menyimpan waktu, gunakan zona waktu umumnya **WIB**.                                |
+| FLT-09 | Rentang angka               | Batas minimum dan maksimum termasuk dalam rentang. Nilai `0` diperlakukan sebagai nilai filter yang valid.                                                        |
+| FLT-10 | Rentang satu sisi           | Jika hanya batas awal/minimum diisi, tampilkan data sejak batas tersebut. Jika hanya batas akhir/maksimum diisi, tampilkan data hingga batas tersebut.              |
+| FLT-11 | Validasi rentang            | Batas awal/minimum tidak boleh melebihi batas akhir/maksimum. Tampilkan disable rentang.                                                                            |
+| FLT-12 | Filter bertingkat           | Jika pilihan filter induk berubah, pilihan pada filter turunan yang tidak lagi valid dikosongkan dan opsinya diperbarui.                                            |
+| FLT-13 | Indikator filter aktif      | Tampilkan ringkasan nilai filter yang sedang diterapkan agar pengguna dapat mengenali pembatasan hasil.                                                             |
+| FLT-14 | Reset filter                | Tombol Reset mengembalikan seluruh filter ke nilai default dan langsung memuat ulang daftar. Kata kunci pencarian dan sortir aktif tetap dipertahankan.             |
+| FLT-15 | Interaksi dengan pencarian  | Filter diterapkan bersama kata kunci pencarian aktif. Data harus memenuhi keduanya.                                                                                 |
+| FLT-16 | Interaksi dengan sortir     | Hasil filter mengikuti kolom dan arah sortir yang sedang aktif.                                                                                                     |
+| FLT-17 | Interaksi dengan pagination | Penerapan atau reset filter mengembalikan pengguna ke halaman pertama. Jumlah item per halaman tetap.                                                               |
+| FLT-18 | Hasil tidak ditemukan       | Tampilkan pesan misalnya **Tidak ada data yang sesuai** dan total hasil nol. Kontrol filter tetap dapat digunakan.                                           |
+| FLT-19 | Proses penerapan            | Selama data dimuat, tampilkan indikator loading. Kondisi loading tidak ditampilkan sebagai hasil kosong.                                                            |
+| FLT-20 | Gagal menerapkan filter     | Tampilkan pesan gagal dan opsi mencoba kembali. Pertahankan pilihan yang diajukan; data dan ringkasan filter tetap mengikuti kondisi terakhir yang berhasil dimuat. |
+| FLT-21 | Perubahan berurutan         | Jika beberapa penerapan filter dijalankan berdekatan, daftar hanya menampilkan hasil dari permintaan terakhir.                                                      |
+| FLT-22 | Memuat ulang halaman        | Setelah refresh, filter kembali ke nilai default yang telah ditentukan.                                                                                             |
