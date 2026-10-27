@@ -131,12 +131,13 @@ async function seedAccesses(users) {
       ]),
     ),
   );
-  const permissionResults = await Promise.all(
-    permissionDefinitions.map(async (definition) => [
+  const permissionResults = [];
+  for (const definition of permissionDefinitions) {
+    permissionResults.push([
       definition.code,
       await ensureSeedPermission(definition),
-    ]),
-  );
+    ]);
+  }
   const permissions = Object.fromEntries(
     permissionResults.map(([permissionCode, result]) => [
       permissionCode,
