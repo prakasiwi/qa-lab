@@ -32,6 +32,16 @@ Akses:
 - OpenAPI JSON: http://localhost:3001/api/docs/openapi.json
 - Swagger assets: http://localhost:3001/swagger/swagger-ui.css
 
+## Konfigurasi autentikasi dan email
+
+Salin `backend/.env.example` menjadi `backend/.env`, lalu isi minimal `DATABASE_URL`, `JWT_SECRET`, `RESEND_API_KEY`, dan `MAIL_FROM`. Resend adalah satu-satunya pengirim email runtime; Mailpit, SMTP, dan `MAIL_TRANSPORT` tidak digunakan.
+
+Email action menggunakan `FRONTEND_URL`, yang harus sama dengan salah satu origin di `CORS_ORIGIN`. Durasi default: OTP MFA 5 menit, verifikasi email 24 jam, invitation 24 jam, reset password 15 menit, dan cooldown kirim ulang 60 detik.
+
+Login selalu berakhir dengan pemilihan Role secara eksplisit. Setiap session menyimpan satu pasangan Role + Permission. Saat role diganti, session sebelumnya dicabut dan frontend me-remount rute terproteksi agar data serta akses role lama tidak dipertahankan.
+
+Migration `20261022000000_finalize_phase7_source_cleanup` aman diterapkan pada database berisi data karena tidak melakukan penghapusan. Kolom/tabel legacy fisik tetap ada sebagai kompatibilitas, tetapi tidak lagi dimodelkan atau digunakan aplikasi. Penghapusan fisiknya memerlukan keputusan retensi data dan migration terpisah yang disetujui.
+
 ## API Documentation URL
 
 Sidebar menu **API Documentation** opens Swagger in a new browser tab using the frontend build-time environment variable `VITE_API_DOCS_URL`.

@@ -3,6 +3,7 @@ import bcrypt from "bcrypt";
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { getDatabaseUrl } from "../src/config/databaseUrl.js";
+import { getPermissionBootstrapActions } from "../src/modules/permissions/permission.catalog.js";
 
 const adapter = new PrismaPg({
   connectionString: getDatabaseUrl(),
@@ -14,50 +15,179 @@ const prisma = new PrismaClient({
 
 async function seedUsers() {
   const passwordHash = await bcrypt.hash("password123", 10);
+  const mfaSecretHash = await bcrypt.hash("qa-lab-mfa-seed", 10);
+  const verifiedAt = new Date();
 
   const users = [
     {
       name: "Admin QA Lab",
       email: "admin@qalab.id",
       passwordHash,
-      role: "ADMIN",
-      isActive: true,
+      status: "ACTIVE",
+      identifierVerifiedAt: verifiedAt,
     },
     {
-      name: "QA Engineer",
-      email: "qa@qalab.id",
+      name: "Password Login User",
+      email: "password@qalab.id",
       passwordHash,
-      role: "QA",
-      isActive: true,
+      status: "ACTIVE",
+      identifierVerifiedAt: verifiedAt,
     },
     {
-      name: "Budi Pratama",
-      email: "student@qalab.id",
+      name: "MFA Login User",
+      email: "mfa@qalab.id",
       passwordHash,
-      role: "STUDENT",
-      isActive: true,
+      status: "ACTIVE",
+      identifierVerifiedAt: verifiedAt,
+      mfaEnabled: true,
+      mfaSecretHash,
     },
   ];
 
+  const seededUsers = [];
   for (const user of users) {
-    await prisma.user.upsert({
+    const seededUser = await prisma.user.upsert({
       where: {
         email: user.email,
       },
-      update: {
-        name: user.name,
-        passwordHash: user.passwordHash,
-        role: user.role,
-        isActive: user.isActive,
-      },
+      update: {},
       create: user,
     });
+    seededUsers.push(seededUser);
   }
 
   console.log(`✓ ${users.length} user berhasil dibuat`);
+  return seededUsers;
 }
 
-async function seedCustomers() {
+async function ensureSeedPermission(definition) {
+  return prisma.$transaction(async (tx) => {
+    const existingPermission = await tx.permission.findUnique({
+      where: { code: definition.code },
+    });
+    const wasCreated = !existingPermission;
+    const permission =
+      existingPermission ||
+      (await tx.permission.create({
+        data: { ...definition, isActive: true },
+      }));
+    const bootstrapActions = getPermissionBootstrapActions(
+      definition.code,
+      wasCreated,
+    );
+    if (bootstrapActions.length > 0) {
+      await tx.permissionAction.createMany({
+        data: bootstrapActions.map(([resource, action]) => ({
+          permissionId: permission.id,
+          resource,
+          action,
+        })),
+      });
+    }
+    return { permission, wasCreated };
+  });
+}
+
+async function seedAccesses(users) {
+  const roleDefinitions = [
+    {
+      code: "ADMIN",
+      name: "Admin",
+      description: "Administrative role for QA Lab.",
+    },
+    {
+      code: "GENERAL",
+      name: "General",
+      description: "General application role for QA Lab users.",
+    },
+  ];
+  const permissionDefinitions = [
+    {
+      code: "ADMIN",
+      name: "Admin",
+      description: "Full application and IAM management actions.",
+    },
+    {
+      code: "GENERAL",
+      name: "General",
+      description:
+        "Standard create and update actions within the user data scope.",
+    },
+    {
+      code: "READ_ONLY",
+      name: "Read Only",
+      description: "Read-only access within the user data scope.",
+    },
+  ];
+  const roles = Object.fromEntries(
+    await Promise.all(
+      roleDefinitions.map(async (definition) => [
+        definition.code,
+        await prisma.role.upsert({
+          where: { code: definition.code },
+          update: {},
+          create: { ...definition, isActive: true },
+        }),
+      ]),
+    ),
+  );
+  const permissionResults = await Promise.all(
+    permissionDefinitions.map(async (definition) => [
+      definition.code,
+      await ensureSeedPermission(definition),
+    ]),
+  );
+  const permissions = Object.fromEntries(
+    permissionResults.map(([permissionCode, result]) => [
+      permissionCode,
+      result.permission,
+    ]),
+  );
+
+  for (const definition of roleDefinitions) {
+    await prisma.role.updateMany({
+      where: { code: definition.code, description: null },
+      data: { description: definition.description },
+    });
+  }
+  for (const definition of permissionDefinitions) {
+    await prisma.permission.updateMany({
+      where: { code: definition.code, description: null },
+      data: { description: definition.description },
+    });
+  }
+
+  const assignmentByEmail = {
+    "admin@qalab.id": { role: roles.ADMIN, permission: permissions.ADMIN },
+    "password@qalab.id": {
+      role: roles.GENERAL,
+      permission: permissions.GENERAL,
+    },
+    "mfa@qalab.id": { role: roles.GENERAL, permission: permissions.GENERAL },
+  };
+
+  await prisma.$transaction(async (tx) => {
+    for (const user of users) {
+      const assignment = assignmentByEmail[user.email];
+      if (!assignment)
+        throw new Error(`Seed access tidak tersedia untuk ${user.email}`);
+      await tx.userAccess.upsert({
+        where: {
+          userId_roleId: { userId: user.id, roleId: assignment.role.id },
+        },
+        update: {},
+        create: {
+          userId: user.id,
+          roleId: assignment.role.id,
+          permissionId: assignment.permission.id,
+          isActive: true,
+        },
+      });
+    }
+  });
+}
+
+async function seedCustomers(ownerUserId) {
   const customers = [
     {
       customerCode: "CUST-001",
@@ -104,16 +234,13 @@ async function seedCustomers() {
   for (const customer of customers) {
     await prisma.customer.upsert({
       where: {
-        customerCode: customer.customerCode,
+        ownerUserId_customerCode: {
+          ownerUserId,
+          customerCode: customer.customerCode,
+        },
       },
-      update: {
-        customerName: customer.customerName,
-        email: customer.email,
-        phone: customer.phone,
-        address: customer.address,
-        isActive: customer.isActive,
-      },
-      create: customer,
+      update: {},
+      create: { ...customer, ownerUserId },
     });
   }
 
@@ -130,16 +257,25 @@ async function syncCustomerCounter() {
     return Math.max(max, Number(match[1]));
   }, 0);
 
-  await prisma.customerCounter.upsert({
+  const requiredNextNumber = maxSequence + 1;
+  const existingCounter = await prisma.customerCounter.findUnique({
     where: { key: "CUSTOMER" },
-    update: { nextNumber: maxSequence + 1 },
-    create: { key: "CUSTOMER", nextNumber: maxSequence + 1 },
   });
+  if (!existingCounter) {
+    await prisma.customerCounter.create({
+      data: { key: "CUSTOMER", nextNumber: requiredNextNumber },
+    });
+  } else if (existingCounter.nextNumber < requiredNextNumber) {
+    await prisma.customerCounter.update({
+      where: { key: "CUSTOMER" },
+      data: { nextNumber: requiredNextNumber },
+    });
+  }
 
-  console.log(`Customer counter disinkronkan ke ${maxSequence + 1}`);
+  console.log(`Customer counter minimal disinkronkan ke ${requiredNextNumber}`);
 }
 
-async function seedProducts() {
+async function seedProducts(ownerUserId) {
   const products = [
     {
       productCode: "PROD-001",
@@ -154,7 +290,7 @@ async function seedProducts() {
       productName: "Jasa Implementasi Automation Testing",
       price: 7500000,
       initialStock: 10,
-      availableStock: 10,
+      availableStock: 9,
       isActive: true,
     },
     {
@@ -162,7 +298,7 @@ async function seedProducts() {
       productName: "Jasa Pelatihan Quality Assurance",
       price: 999000,
       initialStock: 15,
-      availableStock: 15,
+      availableStock: 13,
       isActive: true,
     },
     {
@@ -186,16 +322,13 @@ async function seedProducts() {
   for (const product of products) {
     await prisma.product.upsert({
       where: {
-        productCode: product.productCode,
+        ownerUserId_productCode: {
+          ownerUserId,
+          productCode: product.productCode,
+        },
       },
-      update: {
-        productName: product.productName,
-        price: product.price,
-        initialStock: product.initialStock,
-        availableStock: product.availableStock,
-        isActive: product.isActive,
-      },
-      create: product,
+      update: {},
+      create: { ...product, ownerUserId },
     });
   }
 
@@ -210,7 +343,7 @@ function calculateSeedInvoiceItem(product, item) {
   const discountPercent = Number(item.discountPercent || 0);
   const unitPrice = Number(product.price);
   const grossTotal = money(quantity * unitPrice);
-  const discountAmount = money(grossTotal * discountPercent / 100);
+  const discountAmount = money((grossTotal * discountPercent) / 100);
   const lineTotal = money(grossTotal - discountAmount);
 
   return {
@@ -229,26 +362,53 @@ function calculateSeedInvoiceItem(product, item) {
 
 function calculateSeedInvoiceSummary(items) {
   const subtotal = money(items.reduce((sum, item) => sum + item.grossTotal, 0));
-  const totalDiscount = money(items.reduce((sum, item) => sum + item.discountAmount, 0));
+  const totalDiscount = money(
+    items.reduce((sum, item) => sum + item.discountAmount, 0),
+  );
   const taxableAmount = money(subtotal - totalDiscount);
   const rate = taxRate();
-  const tax = money(taxableAmount * rate / 100);
+  const tax = money((taxableAmount * rate) / 100);
   const grandTotal = money(taxableAmount + tax);
   return { subtotal, totalDiscount, taxRate: rate, tax, grandTotal };
 }
 
-async function createSeedInvoice({ invoiceNumber, customerCode, productCode, quantity, discountPercent = 0, status, additionalInfo, issueDate, dueDate, createdBy }) {
-  const customer = await prisma.customer.findUnique({ where: { customerCode } });
-  const product = await prisma.product.findUnique({ where: { productCode } });
+async function createSeedInvoice({
+  invoiceNumber,
+  customerCode,
+  productCode,
+  quantity,
+  discountPercent = 0,
+  status,
+  additionalInfo,
+  issueDate,
+  dueDate,
+  createdBy,
+}) {
+  const existingInvoice = await prisma.invoice.findUnique({
+    where: { invoiceNumber },
+  });
+  if (existingInvoice) return { invoice: existingInvoice, isCreated: false };
 
-  if (!customer) throw new Error(`Customer seed ${customerCode} tidak ditemukan`);
+  const customer = await prisma.customer.findFirst({
+    where: { customerCode, ownerUserId: createdBy },
+  });
+  const product = await prisma.product.findFirst({
+    where: { productCode, ownerUserId: createdBy },
+  });
+
+  if (!customer)
+    throw new Error(`Customer seed ${customerCode} tidak ditemukan`);
   if (!product) throw new Error(`Product seed ${productCode} tidak ditemukan`);
 
   const item = calculateSeedInvoiceItem(product, { quantity, discountPercent });
   const summary = calculateSeedInvoiceSummary([item]);
-  const submittedAt = ['SUBMITTED', 'PAID'].includes(status) ? new Date(`${issueDate}T09:00:00.000Z`) : null;
-  const paidAt = status === 'PAID' ? new Date(`${issueDate}T10:00:00.000Z`) : null;
-  const cancelledAt = status === 'CANCELLED' ? new Date(`${issueDate}T11:00:00.000Z`) : null;
+  const submittedAt = ["SUBMITTED", "PAID"].includes(status)
+    ? new Date(`${issueDate}T09:00:00.000Z`)
+    : null;
+  const paidAt =
+    status === "PAID" ? new Date(`${issueDate}T10:00:00.000Z`) : null;
+  const cancelledAt =
+    status === "CANCELLED" ? new Date(`${issueDate}T11:00:00.000Z`) : null;
 
   const invoice = await prisma.invoice.create({
     data: {
@@ -270,6 +430,7 @@ async function createSeedInvoice({ invoiceNumber, customerCode, productCode, qua
       paidAt,
       cancelledAt,
       createdBy,
+      ownerUserId: createdBy,
       items: { create: [item] },
     },
   });
@@ -278,59 +439,64 @@ async function createSeedInvoice({ invoiceNumber, customerCode, productCode, qua
     data: {
       invoiceId: invoice.id,
       previousStatus: null,
-      currentStatus: 'DRAFT',
-      action: 'CREATED',
+      currentStatus: "DRAFT",
+      action: "CREATED",
       performedBy: createdBy,
     },
   });
 
-  if (status === 'SUBMITTED') {
+  if (status === "SUBMITTED") {
     await prisma.invoiceHistory.create({
-      data: { invoiceId: invoice.id, previousStatus: 'DRAFT', currentStatus: 'SUBMITTED', action: 'SUBMIT', performedBy: createdBy },
+      data: {
+        invoiceId: invoice.id,
+        previousStatus: "DRAFT",
+        currentStatus: "SUBMITTED",
+        action: "SUBMIT",
+        performedBy: createdBy,
+      },
     });
   }
 
-  if (status === 'PAID') {
+  if (status === "PAID") {
     await prisma.invoiceHistory.createMany({
       data: [
-        { invoiceId: invoice.id, previousStatus: 'DRAFT', currentStatus: 'SUBMITTED', action: 'SUBMIT', performedBy: createdBy },
-        { invoiceId: invoice.id, previousStatus: 'SUBMITTED', currentStatus: 'PAID', action: 'PAY', performedBy: createdBy },
+        {
+          invoiceId: invoice.id,
+          previousStatus: "DRAFT",
+          currentStatus: "SUBMITTED",
+          action: "SUBMIT",
+          performedBy: createdBy,
+        },
+        {
+          invoiceId: invoice.id,
+          previousStatus: "SUBMITTED",
+          currentStatus: "PAID",
+          action: "PAY",
+          performedBy: createdBy,
+        },
       ],
     });
   }
 
-  if (status === 'CANCELLED') {
+  if (status === "CANCELLED") {
     await prisma.invoiceHistory.create({
-      data: { invoiceId: invoice.id, previousStatus: 'DRAFT', currentStatus: 'CANCELLED', action: 'CANCEL', performedBy: createdBy },
-    });
-  }
-
-  return invoice;
-}
-
-async function syncProductAvailableStock() {
-  const products = await prisma.product.findMany({
-    include: {
-      invoiceItems: {
-        include: { invoice: true },
+      data: {
+        invoiceId: invoice.id,
+        previousStatus: "DRAFT",
+        currentStatus: "CANCELLED",
+        action: "CANCEL",
+        performedBy: createdBy,
       },
-    },
-  });
-
-  for (const product of products) {
-    const usedStock = product.invoiceItems
-      .filter((item) => ['SUBMITTED', 'PAID'].includes(item.invoice.status))
-      .reduce((sum, item) => sum + item.quantity, 0);
-
-    await prisma.product.update({
-      where: { id: product.id },
-      data: { availableStock: Math.max(0, product.initialStock - usedStock) },
     });
   }
+
+  return { invoice, isCreated: true };
 }
 
 async function seedInvoices() {
-  const admin = await prisma.user.findUnique({ where: { email: "admin@qalab.id" } });
+  const admin = await prisma.user.findUnique({
+    where: { email: "admin@qalab.id" },
+  });
   if (!admin) throw new Error("Admin user seed tidak ditemukan");
 
   const invoices = [
@@ -377,38 +543,44 @@ async function seedInvoices() {
       dueDate: "2026-08-11",
     },
   ];
-  const invoiceNumbers = invoices.map((invoice) => invoice.invoiceNumber);
-
-  await prisma.invoice.deleteMany({
-    where: {
-      OR: [
-        { invoiceNumber: { in: invoiceNumbers } },
-        { invoiceNumber: { startsWith: "INV-SEED-" } },
-      ],
-    },
-  });
-
+  let createdInvoiceCount = 0;
   for (const invoice of invoices) {
-    await createSeedInvoice({ ...invoice, createdBy: admin.id });
+    const result = await createSeedInvoice({ ...invoice, createdBy: admin.id });
+    if (result.isCreated) createdInvoiceCount += 1;
   }
 
-  await syncProductAvailableStock();
-  await prisma.invoiceCounter.upsert({
+  const requiredNextNumber = invoices.length + 1;
+  const existingCounter = await prisma.invoiceCounter.findUnique({
     where: { period: "202608" },
-    update: { nextNumber: invoices.length + 1 },
-    create: { period: "202608", nextNumber: invoices.length + 1 },
   });
+  if (!existingCounter) {
+    await prisma.invoiceCounter.create({
+      data: { period: "202608", nextNumber: requiredNextNumber },
+    });
+  } else if (existingCounter.nextNumber < requiredNextNumber) {
+    await prisma.invoiceCounter.update({
+      where: { period: "202608" },
+      data: { nextNumber: requiredNextNumber },
+    });
+  }
 
-  console.log(`${invoices.length} invoice seed berhasil dibuat`);
+  console.log(
+    `${createdInvoiceCount} invoice seed baru dibuat; data yang sudah ada dipertahankan`,
+  );
 }
 
 async function main() {
   console.log("Memulai proses seed...");
 
-  await seedUsers();
-  await seedCustomers();
+  const users = await seedUsers();
+  await seedAccesses(users);
+  const admin = await prisma.user.findUnique({
+    where: { email: "admin@qalab.id" },
+  });
+  if (!admin) throw new Error("Admin user seed tidak ditemukan");
+  await seedCustomers(admin.id);
   await syncCustomerCounter();
-  await seedProducts();
+  await seedProducts(admin.id);
   await seedInvoices();
 
   console.log("✓ Seluruh proses seed selesai");

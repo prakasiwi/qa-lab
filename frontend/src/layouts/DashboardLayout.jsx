@@ -2,10 +2,14 @@ import { useEffect, useState } from "react";
 import { Menu } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Sidebar } from "../components/Sidebar";
+import { logout as logoutRequest } from "../api/authApi";
+import { authSession } from "../auth/authSession";
 
 export function DashboardLayout({ children }) {
   const navigate = useNavigate();
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => localStorage.getItem("sidebarCollapsed") === "true");
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(
+    () => localStorage.getItem("sidebarCollapsed") === "true",
+  );
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   useEffect(() => {
@@ -20,13 +24,19 @@ export function DashboardLayout({ children }) {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  const logout = () => {
-    localStorage.removeItem("token");
-    navigate("/login");
+  const logout = async () => {
+    try {
+      await logoutRequest();
+    } finally {
+      authSession.clear();
+      navigate("/login", { replace: true });
+    }
   };
 
   return (
-    <div className={`dashboard-shell ${sidebarCollapsed ? "sidebar-is-collapsed" : ""}`}>
+    <div
+      className={`dashboard-shell ${sidebarCollapsed ? "sidebar-is-collapsed" : ""}`}
+    >
       <Sidebar
         collapsed={sidebarCollapsed}
         mobileOpen={mobileSidebarOpen}

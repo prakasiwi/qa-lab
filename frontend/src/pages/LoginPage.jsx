@@ -1,129 +1,278 @@
-import { useEffect, useState } from "react";
-import { Eye, EyeOff, Info, Lock, Mail } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { login } from "../api/authApi";
-import { Alert } from "../components/Alert";
-import qaLabLogo from "../assets/logo.png";
+import { useEffect, useRef, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { login, resendMfa, selectRole, verifyMfa } from "../api/authApi";
+import { authSession } from "../auth/authSession";
+import {
+  AuthForm,
+  PasswordField,
+  SubmitButton,
+  TextField,
+} from "../components/auth/AuthForm";
+import { getErrorMessage } from "../utils/apiErrors";
+import { firstAllowedPath } from "../utils/authDestination";
+import {
+  isNoActiveRoleError,
+  loginStageFromResponse,
+  normalizeOtp,
+  OTP_LIFETIME_SECONDS,
+  resendOtpState,
+  RESEND_COOLDOWN_SECONDS,
+  sortRoles,
+} from "../auth/loginFlow";
 
 export function LoginPage() {
+  return <LoginFlowPage />;
+}
+
+export function LoginFlowPage() {
   const navigate = useNavigate();
-  const [form, setForm] = useState({
-    email: "admin@qalab.id",
-    password: "password123",
-  });
-  const [showPassword, setShowPassword] = useState(false);
+  const location = useLocation();
+  const [stage, setStage] = useState("CREDENTIALS");
+  const [form, setForm] = useState({ email: "", password: "" });
+  const [challengeId, setChallengeId] = useState("");
+  const [selection, setSelection] = useState(null);
+  const [roleId, setRoleId] = useState("");
+  const [otp, setOtp] = useState("");
+  const [expiresIn, setExpiresIn] = useState(OTP_LIFETIME_SECONDS);
+  const [resendIn, setResendIn] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [apiError, setApiError] = useState("");
+  const [error, setError] = useState("");
+  const inFlight = useRef(false);
 
   useEffect(() => {
-    if (localStorage.getItem("token")) navigate("/");
-  }, [navigate]);
+    if (stage !== "OTP") return undefined;
+    const timer = window.setInterval(() => {
+      setExpiresIn((value) => Math.max(0, value - 1));
+      setResendIn((value) => Math.max(0, value - 1));
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [stage]);
 
-  async function handleSubmit(event) {
-    event.preventDefault();
-    if (loading) return;
-
+  const run = async (action, fallback) => {
+    if (inFlight.current) return;
+    inFlight.current = true;
     setLoading(true);
-    setApiError("");
-
+    setError("");
     try {
-      const response = await login(form);
-      localStorage.setItem("token", response.data.data.token);
-      navigate("/");
-    } catch (error) {
-      setApiError(error.response?.data?.message || "Login gagal. Periksa email dan password.");
+      await action();
+    } catch (requestError) {
+      setError(getErrorMessage(requestError, fallback));
     } finally {
+      inFlight.current = false;
       setLoading(false);
     }
-  }
+  };
+  const finish = async () => {
+    const user = await authSession.establish();
+    if (!user)
+      throw new Error(
+        "Your session could not be verified. Please sign in again.",
+      );
+    navigate(location.state?.from?.pathname || firstAllowedPath(user), {
+      replace: true,
+    });
+  };
+  const acceptStep = (data) => {
+    const next = loginStageFromResponse(data);
+    if (next.stage === "OTP") {
+      setChallengeId(next.challengeId);
+      setOtp("");
+      setExpiresIn(OTP_LIFETIME_SECONDS);
+      setResendIn(RESEND_COOLDOWN_SECONDS);
+      setStage("OTP");
+      return;
+    }
+    if (next.stage === "ROLE") {
+      setSelection(next.selection);
+      setRoleId("");
+      setStage("ROLE");
+      return;
+    }
+    throw new Error("Your sign-in session is invalid. Please sign in again.");
+  };
+  const reset = () => {
+    setStage("CREDENTIALS");
+    setChallengeId("");
+    setSelection(null);
+    setOtp("");
+    setRoleId("");
+    setError("");
+  };
+  const submitCredentials = (event) => {
+    event.preventDefault();
+    run(async () => {
+      try {
+        acceptStep((await login(form)).data.data);
+      } catch (requestError) {
+        if (isNoActiveRoleError(requestError)) {
+          setSelection({ roles: [] });
+          setStage("ROLE");
+          return;
+        }
+        throw requestError;
+      }
+    }, "Invalid email or password.");
+  };
+  const submitOtp = (event) => {
+    event.preventDefault();
+    if (!expiresIn) {
+      setError("This code has expired. Request a new code to continue.");
+      return;
+    }
+    run(
+      async () => acceptStep((await verifyMfa({ challengeId, otp })).data.data),
+      "The verification code is invalid or expired.",
+    );
+  };
+  const resend = () =>
+    run(async () => {
+      const state = resendOtpState(
+        (await resendMfa({ challengeId })).data.data.challengeId,
+      );
+      setChallengeId(state.challengeId);
+      setOtp(state.otp);
+      setExpiresIn(state.expiresIn);
+      setResendIn(state.resendIn);
+    }, "Unable to resend the verification code.");
+  const submitRole = (event) => {
+    event.preventDefault();
+    run(async () => {
+      await selectRole({ selectionProof: selection.selectionProof, roleId });
+      await finish();
+    }, "Your sign-in session has expired. Please sign in again.");
+  };
 
-  function update(key, value) {
-    setForm((current) => ({ ...current, [key]: value }));
+  if (stage === "OTP") {
+    const countdown = `${String(Math.floor(expiresIn / 60)).padStart(2, "0")}:${String(expiresIn % 60).padStart(2, "0")}`;
+    return (
+      <AuthForm
+        title="Verify your email"
+        description="Enter the 6-digit code sent to your email address."
+        error={error}
+        footer={
+          <button className="auth-link-button" type="button" onClick={reset}>
+            Back to login
+          </button>
+        }
+      >
+        <form className="auth-form" onSubmit={submitOtp}>
+          <TextField
+            name="otp"
+            label="Verification code"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            pattern="[0-9]{6}"
+            maxLength="6"
+            value={otp}
+            onChange={(event) => setOtp(normalizeOtp(event.target.value))}
+            required
+          />
+          <p className="muted">Code expires in {countdown}</p>
+          <SubmitButton
+            loading={loading}
+            disabled={!expiresIn || otp.length !== 6}
+          >
+            Verify
+          </SubmitButton>
+          <button
+            type="button"
+            className="auth-link-button"
+            onClick={resend}
+            disabled={loading || resendIn > 0}
+          >
+            {resendIn ? `Resend available in ${resendIn}s` : "Resend OTP"}
+          </button>
+        </form>
+      </AuthForm>
+    );
   }
-
+  if (stage === "ROLE") {
+    const roles = sortRoles(selection?.roles);
+    return (
+      <AuthForm
+        title="Select Role"
+        description="Choose a role to continue."
+        error={error}
+        footer={
+          <button className="auth-link-button" type="button" onClick={reset}>
+            Back to login
+          </button>
+        }
+      >
+        {roles.length === 0 ? (
+          <p role="status">
+            No active role assigned. Please contact your administrator.
+          </p>
+        ) : (
+          <form className="auth-form" onSubmit={submitRole}>
+            <label className="field" htmlFor="role">
+              <span>
+                Role <b>*</b>
+              </span>
+              <select
+                id="role"
+                name="role"
+                value={roleId}
+                onChange={(event) => setRoleId(event.target.value)}
+                required
+              >
+                <option value="">Select role</option>
+                {roles.map((role) => (
+                  <option key={role.id} value={role.id}>
+                    {role.name || role.code}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <SubmitButton loading={loading} disabled={!roleId}>
+              Continue
+            </SubmitButton>
+          </form>
+        )}
+      </AuthForm>
+    );
+  }
   return (
-    <main className="login-page">
-      <section className="login-brand-panel">
-        <div className="login-brand-content">
-          <img src={qaLabLogo} alt="QA Lab" className="login-brand-logo" />
-
-          <h1>
-            Learn QA through
-            <br />
-            a real application
-          </h1>
-
-          <p>
-            A simple invoice management app for manual testing, API testing, and automation.
+    <AuthForm
+      title="Welcome back"
+      description="Sign in to continue to QA Lab."
+      error={error}
+    >
+      <form className="auth-form" onSubmit={submitCredentials}>
+        <TextField
+          name="email"
+          label="Email"
+          type="email"
+          autoComplete="email"
+          value={form.email}
+          onChange={(event) =>
+            setForm((current) => ({ ...current, email: event.target.value }))
+          }
+          required
+        />
+        <div>
+          <PasswordField
+            name="password"
+            label="Password"
+            autoComplete="current-password"
+            value={form.password}
+            onChange={(event) =>
+              setForm((current) => ({
+                ...current,
+                password: event.target.value,
+              }))
+            }
+            required
+          />
+          <p className="auth-links">
+            <Link to="/forgot-password">Forgot password?</Link>
           </p>
         </div>
-
-        <div className="login-dot-pattern" aria-hidden="true" />
-      </section>
-
-      <section className="login-form-panel">
-        <form className="login-card" onSubmit={handleSubmit}>
-          <div className="login-card-header">
-            <h2>Welcome back</h2>
-            <p>Sign in to continue to QA Lab</p>
-          </div>
-
-          <Alert msg={apiError} />
-
-          <label className="field">
-            <span>Email</span>
-            <div className="login-input-wrap">
-              <Mail size={18} aria-hidden="true" />
-              <input
-                type="email"
-                name="email"
-                autoComplete="email"
-                value={form.email}
-                onChange={(event) => update("email", event.target.value)}
-                placeholder="admin@qalab.id"
-                required
-              />
-            </div>
-          </label>
-
-          <label className="field">
-            <span>Password</span>
-            <div className="login-input-wrap">
-              <Lock size={18} aria-hidden="true" />
-              <input
-                type={showPassword ? "text" : "password"}
-                name="password"
-                autoComplete="current-password"
-                value={form.password}
-                onChange={(event) => update("password", event.target.value)}
-                placeholder="Enter your password"
-                required
-              />
-              <button
-                type="button"
-                className="password-toggle"
-                onClick={() => setShowPassword((value) => !value)}
-                aria-label={showPassword ? "Hide password" : "Show password"}
-                title={showPassword ? "Hide password" : "Show password"}
-              >
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
-            </div>
-          </label>
-
-          <button type="submit" className="login-submit" disabled={loading}>
-            {loading ? "Signing in..." : "Login"}
-          </button>
-
-          <div className="login-default-account">
-            <Info size={17} aria-hidden="true" />
-            <span>
-              Default account:
-              <strong>admin@qalab.id / password123</strong>
-            </span>
-          </div>
-        </form>
-      </section>
-    </main>
+        <SubmitButton loading={loading}>Login</SubmitButton>
+      </form>
+      <p className="login-registration-prompt">
+        Don't have an account? <Link to="/register">Create account</Link>
+      </p>
+    </AuthForm>
   );
 }

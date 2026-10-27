@@ -1,9 +1,11 @@
+import { Plus, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getActiveCustomers } from "../../api/customerApi";
 import { createInvoice } from "../../api/invoiceApi";
 import { getActiveProducts } from "../../api/productApi";
 import { Alert } from "../../components/Alert";
+import { ActionIconButton } from "../../components/ActionIconButton";
 import { Field } from "../../components/Field";
 import { DashboardLayout } from "../../layouts/DashboardLayout";
 import { rupiah, today } from "../../utils/format";
@@ -106,8 +108,12 @@ function CreateInvoicePage() {
       const product = productMap.get(item.productId);
       if (!Number.isInteger(Number(item.quantity)) || Number(item.quantity) < 1)
         next[`quantity-${index}`] = "Quantity minimal 1 dan integer";
-      else if (product && Number(item.quantity) > Number(product.availableStock || 0))
-        next[`quantity-${index}`] = "Quantity tidak boleh melebihi Available Stock";
+      else if (
+        product &&
+        Number(item.quantity) > Number(product.availableStock || 0)
+      )
+        next[`quantity-${index}`] =
+          "Quantity tidak boleh melebihi Available Stock";
       if (
         Number(item.discountPercent) < 0 ||
         Number(item.discountPercent) > 100
@@ -186,6 +192,7 @@ function CreateInvoicePage() {
                 <select
                   value={form.customerId}
                   onChange={(e) => update({ customerId: e.target.value })}
+                  required
                 >
                   <option value="">Select customer</option>
                   {customers.map((customer) => (
@@ -211,6 +218,7 @@ function CreateInvoicePage() {
                 type="date"
                 value={form.issueDate}
                 onChange={(e) => update({ issueDate: e.target.value })}
+                required
               />
             </Field>
             <Field label="Due Date" required error={errors.dueDate}>
@@ -219,6 +227,7 @@ function CreateInvoicePage() {
                 min={form.issueDate}
                 value={form.dueDate}
                 onChange={(e) => update({ dueDate: e.target.value })}
+                required
               />
             </Field>
             <Field label="Additional Info" error={errors.additionalInfo}>
@@ -236,8 +245,12 @@ function CreateInvoicePage() {
         <section className="surface full">
           <div className="section-head">
             <h2>Invoice Products</h2>
-            <button type="button" className="primary" onClick={addItem}>
-              + Add Product
+            <button
+              type="button"
+              className="primary icon-button"
+              onClick={addItem}
+            >
+              <Plus size={18} /> Add Product
             </button>
           </div>
           {productLoading ? (
@@ -368,15 +381,13 @@ function ProductRow({
       </td>
       <td>{rupiah(gross - discount)}</td>
       <td>
-        <button
-          type="button"
-          className="danger"
-          aria-label="Remove product"
+        <ActionIconButton
+          label="Remove Product"
+          className="action-destructive"
+          icon={<Trash2 size={18} aria-hidden="true" />}
           onClick={() => removeItem(index)}
           disabled={!canRemove}
-        >
-          Remove
-        </button>
+        />
       </td>
     </tr>
   );

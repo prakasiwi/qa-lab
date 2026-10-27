@@ -11,12 +11,26 @@ import customerRoutes from "./modules/customers/customer.route.js";
 import productRoutes from "./modules/products/product.route.js";
 import invoiceRoutes from "./modules/invoices/invoice.route.js";
 import dashboardRoutes from "./modules/dashboard/dashboard.route.js";
+import userRoutes from "./modules/users/user.route.js";
+import roleRoutes from "./modules/roles/role.route.js";
+import permissionRoutes from "./modules/permissions/permission.route.js";
 import { notFoundMiddleware } from "./middlewares/notFound.middleware.js";
 import { errorMiddleware } from "./middlewares/error.middleware.js";
+import { validateMailConfig } from "./modules/auth/mail.service.js";
+import {
+  getAllowedCorsOrigins,
+  getTrustProxySetting,
+  validateAuthConfig,
+} from "./modules/auth/auth.constants.js";
+
+validateMailConfig();
+validateAuthConfig();
 
 const app = express();
+app.set("trust proxy", getTrustProxySetting());
 const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
 const swaggerAssetsPath = path.resolve(currentDirectory, "../public/swagger");
+const corsOrigins = getAllowedCorsOrigins();
 
 function getPublicApiUrl(req) {
   const configuredUrl = process.env.PUBLIC_API_URL?.trim();
@@ -38,12 +52,22 @@ app.use(helmet());
 
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN || "http://localhost:5173",
+    origin: corsOrigins,
+    credentials: true,
   }),
 );
 
 app.use(express.json());
-app.use(morgan("dev"));
+app.use(
+  morgan((tokens, req, res) =>
+    [
+      tokens.method(req, res),
+      req.path,
+      tokens.status(req, res),
+      `${tokens["response-time"](req, res)} ms`,
+    ].join(" "),
+  ),
+);
 
 if (process.env.NODE_ENV !== "production") {
   app.use("/swagger", express.static(swaggerAssetsPath));
@@ -65,10 +89,7 @@ app.get("/api/docs/openapi.json", (req, res) => {
 });
 
 app.get(["/api/docs", "/api/docs/"], (req, res) => {
-  res
-    .status(200)
-    .type("html")
-    .send(`<!doctype html>
+  res.status(200).type("html").send(`<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -89,6 +110,9 @@ app.use("/api/customers", customerRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/invoices", invoiceRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/roles", roleRoutes);
+app.use("/api/permissions", permissionRoutes);
 
 app.use(notFoundMiddleware);
 app.use(errorMiddleware);
