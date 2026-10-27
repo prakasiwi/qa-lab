@@ -1,11 +1,16 @@
+import { ArrowLeft, Pencil, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { deleteCustomer, getCustomerById } from "../../api/customerApi";
 import { Alert } from "../../components/Alert";
+import { ActionIconButton } from "../../components/ActionIconButton";
 import { DashboardLayout } from "../../layouts/DashboardLayout";
 import { formatDate } from "../../utils/format";
+import { useAllowedAction } from "../../auth/permissions";
 
 export function CustomerDetailPage() {
+  const canUpdate = useAllowedAction("customers:update");
+  const canDelete = useAllowedAction("customers:delete");
   const { id } = useParams();
   const navigate = useNavigate();
   const [customer, setCustomer] = useState(null);
@@ -31,7 +36,11 @@ export function CustomerDetailPage() {
   }, [id]);
 
   async function remove() {
-    if (deleting || !window.confirm(`Delete customer ${customer.customerCode}?`)) return;
+    if (
+      deleting ||
+      !window.confirm(`Delete customer ${customer.customerCode}?`)
+    )
+      return;
     setDeleting(true);
     setApiError("");
     setSuccess("");
@@ -62,7 +71,13 @@ export function CustomerDetailPage() {
     return (
       <DashboardLayout>
         <Alert msg={apiError || "Customer tidak ditemukan."} />
-        <button type="button" className="neutral" onClick={() => navigate("/customers")}>Back to Customers</button>
+        <button
+          type="button"
+          className="neutral"
+          onClick={() => navigate("/customers")}
+        >
+          <ArrowLeft size={18} aria-hidden="true" /> Back to Customers
+        </button>
       </DashboardLayout>
     );
   }
@@ -70,9 +85,41 @@ export function CustomerDetailPage() {
   return (
     <DashboardLayout>
       <div className="breadcrumb">Customers / Customer Detail</div>
-      <div className="page-head">
-        <div>
+      <div className="detail-back">
+        <button
+          type="button"
+          className="detail-back-link"
+          onClick={() => navigate("/customers")}
+        >
+          <ArrowLeft size={18} aria-hidden="true" /> Back
+        </button>
+      </div>
+      <div className="page-head detail-page-head">
+        <div className="heading-with-badge">
           <h1>Customer Detail</h1>
+          <span
+            className={`badge ${customer.isActive ? "badge-active" : "badge-inactive"}`}
+          >
+            {customer.isActive ? "ACTIVE" : "INACTIVE"}
+          </span>
+        </div>
+        <div className="detail-header-actions">
+          {canUpdate && (
+            <ActionIconButton
+              label="Edit Customer"
+              icon={<Pencil size={18} aria-hidden="true" />}
+              to={`/customers/${id}/edit`}
+            />
+          )}
+          {canDelete && (
+            <ActionIconButton
+              label="Delete Customer"
+              className="action-destructive"
+              icon={<Trash2 size={18} aria-hidden="true" />}
+              onClick={remove}
+              disabled={deleting}
+            />
+          )}
         </div>
       </div>
 
@@ -84,7 +131,9 @@ export function CustomerDetailPage() {
           <h2>Customer</h2>
           <div className="customer-detail-meta">
             <span className="invoice-number">{customer.customerCode}</span>
-            <span className={`badge ${customer.isActive ? "badge-active" : "badge-inactive"}`}>
+            <span
+              className={`badge ${customer.isActive ? "badge-active" : "badge-inactive"}`}
+            >
               {customer.isActive ? "ACTIVE" : "INACTIVE"}
             </span>
           </div>
@@ -95,27 +144,36 @@ export function CustomerDetailPage() {
           <CustomerInfo label="Customer Name" value={customer.customerName} />
           <CustomerInfo label="Email" value={customer.email} />
           <CustomerInfo label="Phone" value={customer.phone || "-"} />
-          <CustomerInfo label="Status" value={customer.isActive ? "ACTIVE" : "INACTIVE"} />
-          <CustomerInfo label="Created At" value={formatDate(customer.createdAt)} />
-          <CustomerInfo label="Updated At" value={formatDate(customer.updatedAt)} />
+          <CustomerInfo
+            label="Status"
+            value={customer.isActive ? "ACTIVE" : "INACTIVE"}
+          />
+          <CustomerInfo
+            label="Created At"
+            value={formatDate(customer.createdAt)}
+          />
+          <CustomerInfo
+            label="Updated At"
+            value={formatDate(customer.updatedAt)}
+          />
           <CustomerInfo label="Address" value={customer.address} full address />
         </div>
       </section>
-
-      <div className="actions invoice-detail-actions button-group">
-        <button type="button" className="neutral" onClick={() => navigate("/customers")}>Back</button>
-        <Link className="btn-edit" to={`/customers/${id}/edit`}>Edit</Link>
-        <button type="button" className="danger" onClick={remove} disabled={deleting}>{deleting ? "Deleting..." : "Delete"}</button>
-      </div>
     </DashboardLayout>
   );
 }
 
 function CustomerInfo({ label, value, full = false, address = false }) {
   return (
-    <div className={full ? "customer-detail-item full" : "customer-detail-item"}>
+    <div
+      className={full ? "customer-detail-item full" : "customer-detail-item"}
+    >
       <span className="customer-detail-label">{label}</span>
-      <div className={`customer-detail-value ${address ? "customer-address-value" : ""}`}>{value ?? "-"}</div>
+      <div
+        className={`customer-detail-value ${address ? "customer-address-value" : ""}`}
+      >
+        {value ?? "-"}
+      </div>
     </div>
   );
 }

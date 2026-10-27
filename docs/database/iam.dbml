@@ -1,0 +1,80 @@
+Project {
+  database_type: 'PostgreSQL'
+  Note: 'QA Lab IAM model. IDs are CUID-compatible strings to match the existing Prisma database.'
+}
+
+// IAM
+Table users {
+  id varchar [pk, not null]
+  name varchar [not null]
+  phone varchar
+  email varchar [not null, unique]
+  status varchar [not null] // PENDING_VERIFICATION, PENDING_ACTIVATION, ACTIVE, INACTIVE, LOCKED
+  created_at timestamp [not null, default: `now()`]
+  updated_at timestamp [not null, default: `now()`]
+}
+
+Table roles {
+  id varchar [pk, not null]
+  code varchar [not null, unique]
+  name varchar [not null]
+  is_active boolean [not null, default: true]
+  created_at timestamp [not null, default: `now()`]
+  updated_at timestamp [not null, default: `now()`]
+}
+
+Table permissions {
+  id varchar [pk, not null]
+  code varchar [not null, unique]
+  name varchar [not null]
+  is_active boolean [not null, default: true]
+  created_at timestamp [not null, default: `now()`]
+  updated_at timestamp [not null, default: `now()`]
+}
+
+Table permission_actions {
+  id varchar [pk, not null]
+  permission_id varchar [not null, ref: > permissions.id]
+  resource varchar [not null] // dashboard, customers, products, invoices, iam_users, iam_roles, iam_permissions
+  action varchar [not null] // view, create, update, delete, invite, submit, pay, cancel
+  created_at timestamp [not null, default: `now()`]
+
+  Indexes {
+    permission_id
+    (permission_id, resource, action) [unique]
+  }
+}
+
+Table user_accesses {
+  id varchar [pk, not null]
+  user_id varchar [not null, ref: > users.id]
+  role_id varchar [not null, ref: > roles.id]
+  permission_id varchar [not null, ref: > permissions.id]
+  is_default boolean [not null, default: false]
+  is_active boolean [not null, default: true]
+  created_at timestamp [not null, default: `now()`]
+  updated_at timestamp [not null, default: `now()`]
+
+  Indexes {
+    user_id
+    role_id
+    permission_id
+    (user_id, role_id) [unique]
+    (user_id, is_active)
+  }
+}
+
+Table sessions {
+  id varchar [pk, not null]
+  user_id varchar [not null, ref: > users.id]
+  user_access_id varchar [not null, ref: > user_accesses.id]
+  revoked_at timestamp
+  expires_at timestamp [not null]
+  created_at timestamp [not null, default: `now()`]
+
+  Indexes {
+    user_id
+    user_access_id
+    (user_id, revoked_at)
+  }
+}

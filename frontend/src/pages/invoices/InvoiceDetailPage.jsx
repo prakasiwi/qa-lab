@@ -1,3 +1,4 @@
+import { ArrowLeft, Check, CircleSlash } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
@@ -7,14 +8,19 @@ import {
   submitInvoice,
 } from "../../api/invoiceApi";
 import { Alert } from "../../components/Alert";
+import { ActionIconButton } from "../../components/ActionIconButton";
 import { companyProfile } from "../../config/companyProfile";
 import { DashboardLayout } from "../../layouts/DashboardLayout";
 import { formatDate, rupiah } from "../../utils/format";
+import { useAllowedAction } from "../../auth/permissions";
 
 const conflictMessage =
   "Invoice sudah diproses oleh request lain. Silakan muat ulang halaman.";
 
 export function InvoiceDetailPage() {
+  const canSubmit = useAllowedAction("invoices:submit");
+  const canPay = useAllowedAction("invoices:pay");
+  const canCancel = useAllowedAction("invoices:cancel");
   const { id } = useParams();
   const navigate = useNavigate();
 
@@ -59,7 +65,12 @@ export function InvoiceDetailPage() {
     setInvoice(response.data.data);
   }
 
-  async function runInvoiceAction(action, request, confirmMessage, successMessage) {
+  async function runInvoiceAction(
+    action,
+    request,
+    confirmMessage,
+    successMessage,
+  ) {
     if (runningAction) return;
     if (confirmMessage && !window.confirm(confirmMessage)) return;
 
@@ -132,7 +143,7 @@ export function InvoiceDetailPage() {
           className="neutral"
           onClick={() => navigate("/invoices")}
         >
-          Back to Invoices
+          <ArrowLeft size={18} aria-hidden="true" /> Back to Invoices
         </button>
       </DashboardLayout>
     );
@@ -142,9 +153,52 @@ export function InvoiceDetailPage() {
     <DashboardLayout>
       <div className="breadcrumb">Invoices / Invoice Detail</div>
 
-      <div className="page-head">
-        <div>
+      <div className="detail-back">
+        <button
+          type="button"
+          className="detail-back-link"
+          onClick={() => navigate("/invoices")}
+        >
+          <ArrowLeft size={18} aria-hidden="true" /> Back
+        </button>
+      </div>
+      <div className="page-head detail-page-head">
+        <div className="heading-with-badge">
           <h1>Invoice Detail</h1>
+          <span className={badgeClass}>{status}</span>
+        </div>
+        <div className="detail-header-actions">
+          {status === "DRAFT" && (
+            <>
+              {canCancel && (
+                <ActionIconButton
+                  label="Cancel Invoice"
+                  className="action-destructive"
+                  icon={<CircleSlash size={18} aria-hidden="true" />}
+                  onClick={handleCancel}
+                  disabled={Boolean(runningAction)}
+                />
+              )}
+              {canSubmit && (
+                <ActionIconButton
+                  label="Submit Invoice"
+                  icon={<Check size={18} aria-hidden="true" />}
+                  onClick={handleSubmit}
+                  disabled={submitting}
+                />
+              )}
+            </>
+          )}
+          {canPay && status === "SUBMITTED" && (
+            <button
+              type="button"
+              className="approved"
+              onClick={handlePay}
+              disabled={Boolean(runningAction)}
+            >
+              {runningAction === "pay" ? "Saving..." : "Mark as Paid"}
+            </button>
+          )}
         </div>
       </div>
 
@@ -175,8 +229,11 @@ export function InvoiceDetailPage() {
 
           <section className="invoice-party invoice-party-customer">
             <span className="invoice-label">To</span>
-            <strong>{invoice.customerNameSnapshot}{invoice.customerCodeSnapshot ? ` (${invoice.customerCodeSnapshot})` : ""}</strong>
-            <p>{invoice.customerAddressSnapshot || "-"}</p>
+            <strong>
+              {invoice.customer?.name || "-"}
+              {invoice.customer?.code ? ` (${invoice.customer.code})` : ""}
+            </strong>
+            <p>{invoice.customer?.address || "-"}</p>
 
             <div className="invoice-date-block">
               <span className="invoice-label">Due On</span>
@@ -203,7 +260,11 @@ export function InvoiceDetailPage() {
                 invoice.items.map((item, index) => (
                   <tr key={item.id || index}>
                     <td>{index + 1}</td>
-                    <td>{item.productCodeSnapshot ? `${item.productNameSnapshot} (${item.productCodeSnapshot})` : item.productNameSnapshot}</td>
+                    <td>
+                      {item.productCodeSnapshot
+                        ? `${item.productNameSnapshot} (${item.productCodeSnapshot})`
+                        : item.productNameSnapshot}
+                    </td>
                     <td>{item.quantity}</td>
                     <td>{rupiah(item.unitPrice)}</td>
                     <td>{Number(item.discountPercent || 0)}%</td>
@@ -252,43 +313,6 @@ export function InvoiceDetailPage() {
           </section>
         </div>
       </section>
-
-      <div className="actions invoice-detail-actions button-group">
-        <button
-          type="button"
-          className="neutral"
-          onClick={() => navigate("/invoices")}
-        >
-          Back
-        </button>
-
-        {status === "DRAFT" && (
-          <>
-            <button
-              type="button"
-              className="danger"
-              onClick={handleCancel}
-              disabled={Boolean(runningAction)}
-            >
-              {runningAction === "cancel" ? "Cancelling..." : "Cancel Invoice"}
-            </button>
-            <button type="button" className="primary" onClick={handleSubmit} disabled={submitting}>
-              {submitting ? "Submitting..." : "Submit Invoice"}
-            </button>
-          </>
-        )}
-
-        {status === "SUBMITTED" && (
-          <button
-            type="button"
-            className="approved"
-            onClick={handlePay}
-            disabled={Boolean(runningAction)}
-          >
-            {runningAction === "pay" ? "Saving..." : "Mark as Paid"}
-          </button>
-        )}
-      </div>
     </DashboardLayout>
   );
 }

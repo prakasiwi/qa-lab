@@ -1,16 +1,20 @@
-import { prisma } from '../../config/prisma.js';
-import { AppError } from '../../utils/AppError.js';
-import { ok } from '../../utils/response.js';
+import { Prisma } from "@prisma/client";
+import { prisma } from "../../config/prisma.js";
+import { AppError } from "../../utils/AppError.js";
+import { ok } from "../../utils/response.js";
+import { ownedWhere, ownerData } from "../../utils/ownership.js";
 
-const CUSTOMER_COUNTER_KEY = 'CUSTOMER';
+const CUSTOMER_COUNTER_KEY = "CUSTOMER";
 const MAX_CUSTOMER_SEQUENCE = 100000;
 
 function normalizeCustomerPayload(body) {
   return {
-    customerName: String(body.customerName || '').trim(),
-    email: String(body.email || '').trim().toLowerCase(),
+    customerName: String(body.customerName || "").trim(),
+    email: String(body.email || "")
+      .trim()
+      .toLowerCase(),
     phone: body.phone ? String(body.phone).trim() : null,
-    address: String(body.address || '').trim(),
+    address: String(body.address || "").trim(),
     isActive: body.isActive ?? true,
   };
 }
@@ -23,69 +27,134 @@ async function generateCustomerCode(tx) {
   });
   const sequence = counter.nextNumber - 1;
   if (sequence > MAX_CUSTOMER_SEQUENCE) {
-    throw new AppError('Customer Code sudah mencapai batas maksimal CUST-100000', 422);
+    throw new AppError(
+      "Customer Code sudah mencapai batas maksimal CUST-100000",
+      422,
+    );
   }
-  return `CUST-${String(sequence).padStart(3, '0')}`;
+  return `CUST-${String(sequence).padStart(3, "0")}`;
 }
 
-async function ensureUniqueEmail(email, exceptId) {
-  const duplicate = await prisma.customer.findUnique({ where: { email } });
-  if (duplicate && duplicate.id !== exceptId) {
-    throw new AppError('Email customer sudah digunakan', 409);
+async function ensureUniqueEmail(email, ownerUserId, exceptId) {
+  const duplicate = await prisma.customer.findFirst({
+    where: {
+      ownerUserId,
+      email,
+      ...(exceptId ? { id: { not: exceptId } } : {}),
+    },
+  });
+  if (duplicate) {
+    throw new AppError("Email customer sudah digunakan", 409);
   }
 }
 
 export const listCustomers = async (req, res) => {
-  const { search = '', page = 1, limit = 10, status } = req.validatedQuery ?? req.query;
+  const {
+    search = "",
+    page = 1,
+    limit = 10,
+    status,
+  } = req.validatedQuery ?? req.query;
   const skip = (Number(page) - 1) * Number(limit);
-  const where = {
-    ...(status === 'active' ? { isActive: true } : {}),
-    ...(status === 'inactive' ? { isActive: false } : {}),
-    ...(search ? { OR: [{ customerCode: { contains: search, mode: 'insensitive' } }, { customerName: { contains: search, mode: 'insensitive' } }, { email: { contains: search, mode: 'insensitive' } }] } : {}),
-  };
+  const where = ownedWhere(req.user, {
+    ...(status === "active" ? { isActive: true } : {}),
+    ...(status === "inactive" ? { isActive: false } : {}),
+    ...(search
+      ? {
+          OR: [
+            { customerCode: { contains: search, mode: "insensitive" } },
+            { customerName: { contains: search, mode: "insensitive" } },
+            { email: { contains: search, mode: "insensitive" } },
+          ],
+        }
+      : {}),
+  });
   const [items, total] = await Promise.all([
-    prisma.customer.findMany({ where, skip, take: Number(limit), orderBy: { createdAt: 'desc' } }),
+    prisma.customer.findMany({
+      where,
+      skip,
+      take: Number(limit),
+      orderBy: { createdAt: "desc" },
+    }),
     prisma.customer.count({ where }),
   ]);
-  ok(res, 'Daftar customer berhasil diambil', { items, total, page: Number(page), limit: Number(limit) });
+  ok(res, "Daftar customer berhasil diambil", {
+    items,
+    total,
+    page: Number(page),
+    limit: Number(limit),
+  });
 };
 
 export const getCustomer = async (req, res) => {
-  ok(res, 'Detail customer berhasil diambil', await getExisting(req.params.id));
+  ok(
+    res,
+    "Detail customer berhasil diambil",
+    await getExisting(req.params.id, req.user),
+  );
 };
 
 export const createCustomer = async (req, res) => {
   const data = normalizeCustomerPayload(req.body);
-  await ensureUniqueEmail(data.email);
+  await ensureUniqueEmail(data.email, req.user.id);
   const customer = await prisma.$transaction(async (tx) => {
     const customerCode = await generateCustomerCode(tx);
-    return tx.customer.create({ data: { ...data, customerCode } });
+    return tx.customer.create({
+      data: { ...data, ...ownerData(req.user), customerCode },
+    });
   });
-  ok(res, 'Customer berhasil dibuat', customer, 201);
+  ok(res, "Customer berhasil dibuat", customer, 201);
 };
 
 export const updateCustomer = async (req, res) => {
-  await getExisting(req.params.id);
+  const existing = await getExisting(req.params.id, req.user);
   const data = normalizeCustomerPayload(req.body);
-  await ensureUniqueEmail(data.email, req.params.id);
-  ok(res, 'Customer berhasil diubah', await prisma.customer.update({ where: { id: req.params.id }, data }));
+  await ensureUniqueEmail(data.email, existing.ownerUserId, existing.id);
+  ok(
+    res,
+    "Customer berhasil diubah",
+    await prisma.customer.update({ where: { id: req.params.id }, data }),
+  );
 };
 
 export const updateCustomerStatus = async (req, res) => {
-  await getExisting(req.params.id);
-  ok(res, 'Status customer berhasil diubah', await prisma.customer.update({ where: { id: req.params.id }, data: { isActive: req.body.isActive } }));
+  await getExisting(req.params.id, req.user);
+  ok(
+    res,
+    "Status customer berhasil diubah",
+    await prisma.customer.update({
+      where: { id: req.params.id },
+      data: { isActive: req.body.isActive },
+    }),
+  );
 };
 
 export const deleteCustomer = async (req, res) => {
-  await getExisting(req.params.id);
-  const used = await prisma.invoice.count({ where: { customerId: req.params.id } });
-  if (used) throw new AppError('Customer tidak dapat dihapus karena sudah digunakan pada invoice. Ubah status menjadi Inactive.', 409);
-  await prisma.customer.delete({ where: { id: req.params.id } });
+  await prisma.$transaction(async (tx) => {
+    const rows = await tx.$queryRaw(Prisma.sql`
+      SELECT "id" FROM "Customer"
+      WHERE "id" = ${req.params.id}
+      AND "ownerUserId" = ${req.user.id}
+      FOR UPDATE
+    `);
+    if (!rows[0]) throw new AppError("Customer tidak ditemukan", 404);
+    const used = await tx.invoice.count({
+      where: { customerId: req.params.id },
+    });
+    if (used)
+      throw new AppError(
+        "Customer tidak dapat dihapus karena sudah digunakan pada invoice. Ubah status menjadi Inactive.",
+        409,
+      );
+    await tx.customer.delete({ where: { id: req.params.id } });
+  });
   res.status(204).send();
 };
 
-async function getExisting(id) {
-  const data = await prisma.customer.findUnique({ where: { id } });
-  if (!data) throw new AppError('Customer tidak ditemukan', 404);
+async function getExisting(id, user) {
+  const data = await prisma.customer.findFirst({
+    where: ownedWhere(user, { id }),
+  });
+  if (!data) throw new AppError("Customer tidak ditemukan", 404);
   return data;
 }

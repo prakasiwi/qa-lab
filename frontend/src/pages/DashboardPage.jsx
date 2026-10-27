@@ -13,6 +13,7 @@ import { getDashboard } from "../api/dashboardApi";
 import { Alert } from "../components/Alert";
 import { DashboardLayout } from "../layouts/DashboardLayout";
 import { formatDate, rupiah } from "../utils/format";
+import { useAllowedAction } from "../auth/permissions";
 
 const defaultData = {
   summary: {
@@ -33,6 +34,7 @@ const defaultData = {
 };
 
 export function DashboardPage() {
+  const canViewInvoices = useAllowedAction("invoices:view");
   const [data, setData] = useState(defaultData);
   const [loading, setLoading] = useState(true);
   const [apiError, setApiError] = useState("");
@@ -122,7 +124,11 @@ export function DashboardPage() {
                     width={72}
                   />
                   <Tooltip formatter={(value) => rupiah(value)} />
-                  <Bar dataKey="revenue" fill="var(--brand-blue-600)" radius={[8, 8, 0, 0]} />
+                  <Bar
+                    dataKey="revenue"
+                    fill="var(--brand-blue-600)"
+                    radius={[8, 8, 0, 0]}
+                  />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -160,9 +166,11 @@ export function DashboardPage() {
               <h2>Recent Invoices</h2>
               <p>Latest invoice activity</p>
             </div>
-            <Link className="primary" to="/invoices">
-              See All
-            </Link>
+            {canViewInvoices && (
+              <Link className="primary" to="/invoices">
+                See All
+              </Link>
+            )}
           </div>
           <div className="table-wrap">
             <table>
@@ -180,9 +188,16 @@ export function DashboardPage() {
                   data.recentInvoices.map((invoice) => (
                     <tr key={invoice.id}>
                       <td>
-                        <Link className="linked" to={`/invoices/${invoice.id}`}>
-                          {invoice.invoiceNumber}
-                        </Link>
+                        {canViewInvoices ? (
+                          <Link
+                            className="linked"
+                            to={`/invoices/${invoice.id}`}
+                          >
+                            {invoice.invoiceNumber}
+                          </Link>
+                        ) : (
+                          invoice.invoiceNumber
+                        )}
                       </td>
                       <td>{invoice.customerNameSnapshot}</td>
                       <td>{formatDate(invoice.issueDate)}</td>

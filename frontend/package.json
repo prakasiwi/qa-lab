@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "oxlint",
-    "test": "node scripts/verify-api-docs-menu.js",
+    "test": "node scripts/verify-api-docs-menu.js && node scripts/verify-task7-auth.js && node scripts/verify-task8-users.js && node scripts/verify-phase2-iam.js && node scripts/verify-phase3-auth.js",
     "preview": "vite preview"
   },
   "dependencies": {
