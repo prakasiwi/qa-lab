@@ -2,9 +2,9 @@ import { AppError } from "../../utils/AppError.js";
 import { prisma } from "../../config/prisma.js";
 import { createSessionInTransaction } from "./session.service.js";
 import { eligibleAccessWhere } from "./auth-access.service.js";
-import { assertMfaRequirementSatisfied } from "./password-auth.service.js";
+import { assertEmailOtpRequirementSatisfied } from "./password-auth.service.js";
 
-const SESSION_AUTH_METHODS = new Set(["PASSWORD", "MFA"]);
+const SESSION_AUTH_METHODS = new Set(["PASSWORD", "EMAIL_OTP"]);
 
 export async function completeAuthenticationInTransaction(
   tx,
@@ -42,7 +42,7 @@ export async function completeAuthenticationInTransaction(
   });
   if (!user || !userAccess)
     throw new AppError("Login access is unavailable.", 401);
-  assertMfaRequirementSatisfied(user, authMethod);
+  assertEmailOtpRequirementSatisfied(user, authMethod);
   const authentication = await createSessionInTransaction(
     tx,
     userId,

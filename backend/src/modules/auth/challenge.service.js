@@ -7,7 +7,7 @@ import {
   getInvitationChallengeTtlMs,
   getJwtSecret,
   getMaxChallengeAttempts,
-  getMfaOtpTtlMs,
+  getEmailOtpTtlMs,
   getPasswordResetTtlMs,
   getResendCooldownMs,
   getRoleSelectionTtlMs,
@@ -29,7 +29,7 @@ function getChallengeTtlForPurpose(purpose) {
   if (purpose === "REGISTER") return getEmailVerificationTtlMs();
   if (purpose === "ADMIN_INVITATION") return getInvitationChallengeTtlMs();
   if (purpose === "RESET_PASSWORD") return getPasswordResetTtlMs();
-  if (purpose === "MFA_LOGIN") return getMfaOtpTtlMs();
+  if (purpose === "EMAIL_OTP_LOGIN") return getEmailOtpTtlMs();
   if (purpose === "ACCESS_SELECTION") return getRoleSelectionTtlMs();
   return getChallengeTtlMs();
 }
@@ -372,7 +372,7 @@ export async function completePasswordReset(secret, passwordHash) {
     await tx.authChallenge.updateMany({
       where: {
         userId: user.id,
-        purpose: { in: ["MFA_LOGIN", "ACCESS_SELECTION"] },
+        purpose: { in: ["EMAIL_OTP_LOGIN", "ACCESS_SELECTION"] },
         consumedAt: null,
       },
       data: { consumedAt: now },

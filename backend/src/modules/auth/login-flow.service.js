@@ -12,6 +12,6 @@ export async function prepareRoleSelection(user, authMethod, database) {
     user.id,
     authMethod,
     accesses,
-    user.mfaEnabled,
+    user.emailOtpRequired,
   );
 }

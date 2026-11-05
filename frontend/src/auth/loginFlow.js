@@ -13,7 +13,7 @@ export const isNoActiveRoleError = (error) =>
     error?.response?.data?.message || error?.message || "",
   );
 export function loginStageFromResponse(data) {
-  if (data?.nextStep === "OTP_REQUIRED" && data.challengeId)
+  if (data?.nextStep === "EMAIL_OTP_REQUIRED" && data.challengeId)
     return { stage: "OTP", challengeId: data.challengeId };
   if (data?.nextStep === "ROLE_SELECTION_REQUIRED" && data.selectionProof)
     return { stage: "ROLE", selection: data };

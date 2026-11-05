@@ -1,6 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { login, resendMfa, selectRole, verifyMfa } from "../api/authApi";
+import {
+  login,
+  resendEmailOtp,
+  selectRole,
+  verifyEmailOtp,
+} from "../api/authApi";
 import { authSession } from "../auth/authSession";
 import {
   AuthForm,
@@ -120,14 +125,15 @@ export function LoginFlowPage() {
       return;
     }
     run(
-      async () => acceptStep((await verifyMfa({ challengeId, otp })).data.data),
+      async () =>
+        acceptStep((await verifyEmailOtp({ challengeId, otp })).data.data),
       "The verification code is invalid or expired.",
     );
   };
   const resend = () =>
     run(async () => {
       const state = resendOtpState(
-        (await resendMfa({ challengeId })).data.data.challengeId,
+        (await resendEmailOtp({ challengeId })).data.data.challengeId,
       );
       setChallengeId(state.challengeId);
       setOtp(state.otp);

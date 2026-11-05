@@ -21,7 +21,7 @@ const userFields = {
   email: true,
   status: true,
   identifierVerifiedAt: true,
-  mfaEnabled: true,
+  emailOtpRequired: true,
   createdAt: true,
   updatedAt: true,
 };
@@ -128,7 +128,7 @@ const userWithAssignments = {
 };
 
 export async function listUsers(req, res) {
-  const { page, limit, search, status, verified, mfaEnabled, role } =
+  const { page, limit, search, status, verified, emailOtpRequired, role } =
     req.validatedQuery;
   const where = {
     ...(search
@@ -144,7 +144,7 @@ export async function listUsers(req, res) {
     ...(verified === undefined
       ? {}
       : { identifierVerifiedAt: verified ? { not: null } : null }),
-    ...(mfaEnabled === undefined ? {} : { mfaEnabled }),
+    ...(emailOtpRequired === undefined ? {} : { emailOtpRequired }),
     ...(role
       ? { accesses: { some: { role: { code: role }, isActive: true } } }
       : {}),
@@ -205,7 +205,7 @@ export async function createUser(req, res) {
         phone: req.body.phone || null,
         email,
         status: "PENDING_ACTIVATION",
-        mfaEnabled: req.body.mfaEnabled,
+        emailOtpRequired: req.body.emailOtpRequired,
       },
     });
     await replaceAssignments(
@@ -271,17 +271,18 @@ export async function updateUser(req, res) {
       req.body.accessAssignments,
       req.user.allowedActions,
     );
-    const hasMfaChanged = Boolean(current.mfaEnabled) !== req.body.mfaEnabled;
+    const hasEmailOtpRequirementChanged =
+      Boolean(current.emailOtpRequired) !== req.body.emailOtpRequired;
     const result = await tx.user.update({
       where: { id: current.id },
       data: {
         name: req.body.name.trim(),
         phone: req.body.phone || null,
-        mfaEnabled: req.body.mfaEnabled,
+        emailOtpRequired: req.body.emailOtpRequired,
       },
       select: userWithAssignments,
     });
-    if (hasMfaChanged)
+    if (hasEmailOtpRequirementChanged)
       await tx.session.updateMany({
         where: { userId: current.id, revokedAt: null },
         data: { revokedAt: new Date() },

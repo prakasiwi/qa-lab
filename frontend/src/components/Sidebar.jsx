@@ -265,6 +265,16 @@ export function Sidebar({
                       <span>Products</span>
                     </NavLink>
                   )}
+                  <NavLink
+                    to="/purchase-orders"
+                    onClick={onCloseMobile}
+                    className={({ isActive }) =>
+                      `sidebar-subitem ${isActive ? "active" : ""}`
+                    }
+                  >
+                    <Users size={18} />
+                    <span>Suppliers</span>
+                  </NavLink>
                 </div>
               )}
             </div>
@@ -303,6 +313,16 @@ export function Sidebar({
                   >
                     <FileText size={18} />
                     <span>Invoices</span>
+                  </NavLink>
+                  <NavLink
+                    to="/suppliers"
+                    onClick={onCloseMobile}
+                    className={({ isActive }) =>
+                      `sidebar-subitem ${isActive ? "active" : ""}`
+                    }
+                  >
+                    <FileText size={18} />
+                    <span>Purchase Orders</span>
                   </NavLink>
                 </div>
               )}

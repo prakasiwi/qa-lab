@@ -16,14 +16,14 @@ enum UserStatus {
 
 enum AuthMethod {
   PASSWORD
-  MFA
+  EMAIL_OTP
 }
 
 enum AuthChallengePurpose {
   REGISTER
   ADMIN_INVITATION
   RESET_PASSWORD
-  MFA_LOGIN
+  EMAIL_OTP_LOGIN
   ACCESS_SELECTION
 }
 
@@ -48,8 +48,8 @@ model User {
   status               UserStatus @default(ACTIVE)
   identifierVerifiedAt DateTime?
   passwordChangedAt    DateTime?
-  mfaEnabled           Boolean    @default(false)
-  mfaSecretHash        String?
+  emailOtpRequired     Boolean    @default(false)
+  emailOtpSecretHash   String?
   createdAt            DateTime   @default(now())
   updatedAt            DateTime   @updatedAt
 
@@ -130,7 +130,7 @@ model Session {
   userAccessId String
   tokenHash    String     @unique
   authMethod   AuthMethod
-  mfaVerifiedAt DateTime?
+  emailOtpVerifiedAt DateTime?
   expiresAt    DateTime
   revokedAt    DateTime?
   createdAt    DateTime   @default(now())

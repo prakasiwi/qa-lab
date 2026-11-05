@@ -23,11 +23,11 @@ import {
 import { sendAuthMail, sendPasswordChangedMail } from "./mail.service.js";
 import { getPublicAuthResponseFloorMs } from "./auth.constants.js";
 import {
-  authenticateMfa,
-  findMfaChallengeUserId,
-  resendMfaChallenge,
-  startMfaChallengeForUser,
-} from "./mfa.service.js";
+  authenticateEmailOtp,
+  findEmailOtpChallengeUserId,
+  resendEmailOtpChallenge,
+  startEmailOtpChallengeForUser,
+} from "./email-otp.service.js";
 import { consumeAccessSelection } from "./role-selection.service.js";
 import { findEligibleAccesses } from "./auth-access.service.js";
 import { authenticatePasswordCredentials } from "./password-auth.service.js";
@@ -76,7 +76,7 @@ async function auditRejectedAuthentication(
     userId = null;
   }
   const selectionMethod = challengeChannel?.match(
-    /^role-selection:(PASSWORD|MFA):/,
+    /^role-selection:(PASSWORD|EMAIL_OTP):/,
   )?.[1];
   await writeAuthAudit({
     userId,
@@ -89,7 +89,7 @@ async function auditRejectedAuthentication(
   });
 }
 
-async function enforceMfaAttemptLimit(
+async function enforceEmailOtpAttemptLimit(
   req,
   res,
   userId,
@@ -97,14 +97,14 @@ async function enforceMfaAttemptLimit(
 ) {
   const ip = req.ip || "unknown";
   const { isLimited, retryAfterSeconds } = await consumePersistentAttempt({
-    purpose: "MFA_LOGIN",
+    purpose: "EMAIL_OTP_LOGIN",
     category: "otp:user-ip",
     fingerprint: `${userId || fallbackFingerprint}:${ip}`,
   });
   if (!isLimited) return;
   res.set("Retry-After", String(retryAfterSeconds));
   throw new AppError(
-    "Terlalu banyak percobaan MFA. Silakan coba lagi setelah masa tunggu berakhir.",
+    "Terlalu banyak percobaan OTP email. Silakan coba lagi setelah masa tunggu berakhir.",
     429,
   );
 }
@@ -118,11 +118,11 @@ export const login = async (req, res) => {
       429,
     );
   if (!user) throw new AppError("Email atau password salah", 401);
-  if (user.mfaEnabled) {
-    await enforceMfaAttemptLimit(req, res, user.id);
-    const challenge = await startMfaChallengeForUser(user);
-    return ok(res, "MFA verification is required.", {
-      nextStep: "OTP_REQUIRED",
+  if (user.emailOtpRequired) {
+    await enforceEmailOtpAttemptLimit(req, res, user.id);
+    const challenge = await startEmailOtpChallengeForUser(user);
+    return ok(res, "Email OTP verification is required.", {
+      nextStep: "EMAIL_OTP_REQUIRED",
       ...challenge,
     });
   }
@@ -537,16 +537,16 @@ async function completeRoleSelection(req, res) {
   });
 }
 
-export const verifyMfa = async (req, res) => {
+export const verifyEmailOtp = async (req, res) => {
   let authentication;
   try {
-    const userId = await findMfaChallengeUserId(req.body.challengeId);
-    await enforceMfaAttemptLimit(req, res, userId, req.body.challengeId);
-    authentication = await authenticateMfa(req.body.challengeId, req.body.otp);
+    const userId = await findEmailOtpChallengeUserId(req.body.challengeId);
+    await enforceEmailOtpAttemptLimit(req, res, userId, req.body.challengeId);
+    authentication = await authenticateEmailOtp(req.body.challengeId, req.body.otp);
     if (!authentication)
-      throw new AppError("Kode MFA tidak valid atau kedaluwarsa", 400);
+      throw new AppError("Kode OTP email tidak valid atau kedaluwarsa", 400);
   } catch (error) {
-    await auditRejectedAuthentication("MFA_VERIFY_REJECTED", "MFA", {
+    await auditRejectedAuthentication("EMAIL_OTP_VERIFY_REJECTED", "EMAIL_OTP", {
       challengeId: req.body.challengeId,
     });
     throw error;
@@ -557,12 +557,12 @@ export const verifyMfa = async (req, res) => {
   });
 };
 
-export const resendMfa = async (req, res) => {
-  const userId = await findMfaChallengeUserId(req.body.challengeId);
-  await enforceMfaAttemptLimit(req, res, userId, req.body.challengeId);
-  const challenge = await resendMfaChallenge(req.body.challengeId);
-  return ok(res, "MFA verification code sent.", {
-    nextStep: "OTP_REQUIRED",
+export const resendEmailOtp = async (req, res) => {
+  const userId = await findEmailOtpChallengeUserId(req.body.challengeId);
+  await enforceEmailOtpAttemptLimit(req, res, userId, req.body.challengeId);
+  const challenge = await resendEmailOtpChallenge(req.body.challengeId);
+  return ok(res, "Email OTP verification code sent.", {
+    nextStep: "EMAIL_OTP_REQUIRED",
     ...challenge,
   });
 };

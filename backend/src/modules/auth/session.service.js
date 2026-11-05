@@ -31,7 +31,7 @@ export async function createSessionInTransaction(
       userAccessId,
       tokenHash: hashSessionToken(sessionToken),
       authMethod,
-      mfaVerifiedAt: authMethod === "MFA" ? new Date() : null,
+      emailOtpVerifiedAt: authMethod === "EMAIL_OTP" ? new Date() : null,
       expiresAt,
     },
   });

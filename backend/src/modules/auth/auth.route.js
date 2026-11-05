@@ -14,7 +14,7 @@ import {
   logout,
   profile,
   register,
-  resendMfa,
+  resendEmailOtp,
   resendResetPassword,
   resendVerification,
   resetContext,
@@ -25,15 +25,15 @@ import {
   sessions,
   switchRole,
   verifyIdentifier,
-  verifyMfa,
+  verifyEmailOtp,
 } from "./auth.controller.js";
 import {
   activateAccountSchema,
   activationContextSchema,
   forgotPasswordSchema,
   loginSchema,
-  mfaResendSchema,
-  mfaVerifySchema,
+  emailOtpResendSchema,
+  emailOtpVerifySchema,
   registerSchema,
   resendVerificationSchema,
   resetContextSchema,
@@ -119,18 +119,18 @@ router.post(
   asyncHandler(resetPassword),
 );
 router.post(
-  "/mfa/verify",
+  "/email-otp/verify",
   publicAuthIpRateLimit,
-  validate(mfaVerifySchema),
+  validate(emailOtpVerifySchema),
   publicChallengeRateLimit,
-  asyncHandler(verifyMfa),
+  asyncHandler(verifyEmailOtp),
 );
 router.post(
-  "/mfa/resend",
+  "/email-otp/resend",
   publicAuthIpRateLimit,
-  validate(mfaResendSchema),
+  validate(emailOtpResendSchema),
   publicChallengeRateLimit,
-  asyncHandler(resendMfa),
+  asyncHandler(resendEmailOtp),
 );
 router.post(
   "/select-role",

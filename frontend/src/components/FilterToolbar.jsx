@@ -50,14 +50,25 @@ export function FilterToolbar({
         <Filter size={19} /> Filter
         {activeCount > 0 && <span>{activeCount}</span>}
       </button>
-      <label className="list-search">
+      <div className="list-search">
         <Search size={20} aria-hidden="true" />
         <input
           value={search}
           onChange={(event) => onSearch(event.target.value)}
           placeholder={placeholder}
+          aria-label={placeholder}
         />
-      </label>
+        {search && (
+          <button
+            type="button"
+            className="list-search-clear"
+            onClick={() => onSearch("")}
+            aria-label="Clear search"
+          >
+            <X size={18} aria-hidden="true" />
+          </button>
+        )}
+      </div>
       {open && (
         <section className="filter-popover" aria-label="Filters">
           <header>

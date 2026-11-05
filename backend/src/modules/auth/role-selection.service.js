@@ -12,22 +12,24 @@ import {
 } from "./auth-access.service.js";
 import { completeAuthenticationInTransaction } from "./auth.service.js";
 
-const SELECTION_METHODS = new Set(["PASSWORD", "MFA"]);
+const SELECTION_METHODS = new Set(["PASSWORD", "EMAIL_OTP"]);
 
 export async function prepareAccessSelectionInTransaction(
   tx,
   userId,
   authMethod,
   accesses,
-  mfaEnabled = false,
+  emailOtpRequired = false,
 ) {
   if (!SELECTION_METHODS.has(authMethod))
     throw new AppError("Metode pemilihan akses tidak valid", 400);
-  const mfaState = mfaEnabled ? "mfa-on" : "mfa-off";
+  const emailOtpState = emailOtpRequired
+    ? "email-otp-required"
+    : "email-otp-optional";
   const proof = await prepareChallengeInTransaction(tx, {
     userId,
     purpose: "ACCESS_SELECTION",
-    channel: `role-selection:${authMethod}:${mfaState}`,
+    channel: `role-selection:${authMethod}:${emailOtpState}`,
     bypassCooldown: true,
   });
   return { roles: accesses.map(sanitizeAccess), selectionProof: proof.secret };
@@ -43,16 +45,16 @@ export async function consumeAccessSelection(selectionProof, roleId) {
     if (!proof) return null;
     const now = new Date();
     const methodMatch = proof?.channel.match(
-      /^role-selection:(PASSWORD|MFA):(mfa-on|mfa-off):pending:/,
+      /^role-selection:(PASSWORD|EMAIL_OTP):(email-otp-required|email-otp-optional):pending:/,
     );
     const authMethod = methodMatch?.[1];
-    const expectedMfaState = methodMatch?.[2] === "mfa-on";
+    const expectedEmailOtpRequired = methodMatch?.[2] === "email-otp-required";
     const user = await tx.user.findFirst({
       where: {
         id: proof.userId,
         status: "ACTIVE",
         identifierVerifiedAt: { not: null },
-        mfaEnabled: expectedMfaState,
+        emailOtpRequired: expectedEmailOtpRequired,
       },
       select: { id: true },
     });
