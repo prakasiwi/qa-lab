@@ -24,11 +24,11 @@ export function UserFormPage({ mode = "create" }) {
     name: "",
     phone: "",
     email: "",
-    mfaEnabled: false,
+    emailOtpRequired: false,
     updatedAt: "",
     accessAssignments: [emptyAssignment()],
   });
-  const originalMfa = useRef(false);
+  const originalEmailOtpRequirement = useRef(false);
   const [options, setOptions] = useState({ roles: [], permissions: [] });
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
@@ -39,13 +39,13 @@ export function UserFormPage({ mode = "create" }) {
         setOptions(choice.data.data);
         if (!detail) return;
         const user = detail.data.data;
-        originalMfa.current = Boolean(user.mfaEnabled);
+        originalEmailOtpRequirement.current = Boolean(user.emailOtpRequired);
         setStatus(user.status);
         setForm({
           name: user.name,
           phone: user.phone || "",
           email: user.email,
-          mfaEnabled: Boolean(user.mfaEnabled),
+          emailOtpRequired: Boolean(user.emailOtpRequired),
           updatedAt: user.updatedAt,
           accessAssignments: user.accesses
             .filter((item) => item.isActive)
@@ -66,9 +66,9 @@ export function UserFormPage({ mode = "create" }) {
       return setError("At least one access assignment is required.");
     if (
       isEdit &&
-      form.mfaEnabled !== originalMfa.current &&
+      form.emailOtpRequired !== originalEmailOtpRequirement.current &&
       !window.confirm(
-        "Changing MFA will sign this user out on all devices. Continue?",
+        "Changing the OTP requirement will sign this user out on all devices. Continue?",
       )
     )
       return;
@@ -160,34 +160,35 @@ export function UserFormPage({ mode = "create" }) {
         </section>
         <section className="surface full user-card">
           <h2>Security</h2>
-          <div className="mfa-control">
-            <div className="mfa-copy">
+          <div className="otp-control">
+            <div className="otp-copy">
               <ShieldCheck size={28} />
               <div>
-                <strong>Require MFA</strong>
+                <strong>Require OTP</strong>
                 <p>Require an email OTP at every sign-in.</p>
               </div>
             </div>
             <label className="switch-control">
               <input
                 type="checkbox"
-                checked={form.mfaEnabled}
+                checked={form.emailOtpRequired}
                 onChange={(event) =>
-                  setForm({ ...form, mfaEnabled: event.target.checked })
+                  setForm({ ...form, emailOtpRequired: event.target.checked })
                 }
               />
               <span />
             </label>
             <strong className="switch-state">
-              {form.mfaEnabled ? "ON" : "OFF"}
+              {form.emailOtpRequired ? "ON" : "OFF"}
             </strong>
           </div>
-          {isEdit && form.mfaEnabled !== originalMfa.current && (
-            <div className="mfa-warning">
-              <Info size={19} /> Changing MFA signs this user out on all devices
-              after saving.
-            </div>
-          )}
+          {isEdit &&
+            form.emailOtpRequired !== originalEmailOtpRequirement.current && (
+              <div className="otp-warning">
+                <Info size={19} /> Changing the OTP requirement signs this user
+                out on all devices after saving.
+              </div>
+            )}
         </section>
         <section className="surface full user-card">
           <div className="section-head">

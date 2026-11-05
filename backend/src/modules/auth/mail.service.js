@@ -4,7 +4,7 @@ import {
 } from "./auth.constants.js";
 
 const EMAIL_PURPOSES = Object.freeze({
-  MFA_LOGIN: {
+  EMAIL_OTP_LOGIN: {
     subject: "Your QA Lab verification code",
     heading: "Verify your sign-in",
     ttl: "5 minutes",
@@ -135,7 +135,7 @@ export async function sendAuthMail({ email, name, purpose, secret }) {
   const definition = EMAIL_PURPOSES[purpose];
   if (!definition) throw new Error("Tujuan email autentikasi tidak didukung");
   const message =
-    purpose === "MFA_LOGIN"
+    purpose === "EMAIL_OTP_LOGIN"
       ? otpEmailTemplate({ name, secret, definition })
       : actionEmailTemplate({ name, secret, definition });
   return sendResendMessage({ email, ...message });

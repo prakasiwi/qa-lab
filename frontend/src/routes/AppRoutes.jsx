@@ -32,6 +32,7 @@ import { RoleDetailPage } from "../pages/roles/RoleDetailPage";
 import { PermissionsPage } from "../pages/permissions/PermissionsPage";
 import { PermissionFormPage } from "../pages/permissions/PermissionFormPage";
 import { PermissionDetailPage } from "../pages/permissions/PermissionDetailPage";
+import { ComingSoonPage } from "../pages/ComingSoonPage";
 import { useAuthSession } from "../auth/useAuthSession";
 
 const protectedPage = (page) => <ProtectedRoute>{page}</ProtectedRoute>;
@@ -104,6 +105,16 @@ function RoleScopedRoutes() {
           "products:update",
           <ProductFormPage mode="edit" />,
         )}
+      />
+      <Route
+        path="/suppliers"
+        element={protectedPage(<ComingSoonPage moduleName="Suppliers" />)}
+      />
+      <Route
+        path="/purchase-orders"
+        element={
+          protectedPage(<ComingSoonPage moduleName="Purchase Orders" />)
+        }
       />
       <Route
         path="/invoices"

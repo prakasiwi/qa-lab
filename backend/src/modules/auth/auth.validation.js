@@ -67,7 +67,7 @@ export const resetPasswordSchema = Joi.object({
     .required()
     .messages({ "any.only": "Konfirmasi password harus sama" }),
 });
-export const mfaVerifySchema = Joi.object({
+export const emailOtpVerifySchema = Joi.object({
   challengeId: Joi.string().required(),
   otp: Joi.string()
     .pattern(/^\d{6}$/)
@@ -77,7 +77,7 @@ export const selectAccessSchema = Joi.object({
   selectionProof: Joi.string().min(20).required(),
   roleId: Joi.string().required(),
 });
-export const mfaResendSchema = Joi.object({
+export const emailOtpResendSchema = Joi.object({
   challengeId: Joi.string().required(),
 });
 export const switchRoleSchema = Joi.object({ roleId: Joi.string().required() });

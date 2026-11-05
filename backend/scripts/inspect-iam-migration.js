@@ -20,7 +20,7 @@ const integrity = await client.query(`
     (SELECT COUNT(*)::int FROM "UserAccess" ua LEFT JOIN "Role" r ON r.id = ua."roleId" WHERE r.id IS NULL) AS orphan_roles,
     (SELECT COUNT(*)::int FROM "UserAccess" ua LEFT JOIN "Permission" p ON p.id = ua."permissionId" WHERE p.id IS NULL) AS orphan_permissions,
     (SELECT COUNT(*)::int FROM "Session" s LEFT JOIN "UserAccess" ua ON ua.id = s."userAccessId" WHERE ua.id IS NULL) AS orphan_sessions,
-    (SELECT COUNT(*)::int FROM "User" WHERE "mfaEnabled" IS NULL) AS null_mfa
+    (SELECT COUNT(*)::int FROM "User" WHERE "emailOtpRequired" IS NULL) AS null_email_otp_required
 `);
 const counts = {};
 for (const { table_name: table } of tables.rows) {

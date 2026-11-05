@@ -56,7 +56,7 @@ export const swaggerSpec = swaggerJsdoc({
           required: ["token"],
           properties: { token: { type: "string", writeOnly: true } },
         },
-        MfaVerifyRequest: {
+        EmailOtpVerifyRequest: {
           type: "object",
           required: ["challengeId", "otp"],
           properties: {
@@ -64,7 +64,7 @@ export const swaggerSpec = swaggerJsdoc({
             otp: { type: "string", pattern: "^\\d{6}$", writeOnly: true },
           },
         },
-        MfaResendRequest: {
+        EmailOtpResendRequest: {
           type: "object",
           required: ["challengeId"],
           properties: { challengeId: { type: "string" } },
@@ -351,7 +351,7 @@ export const swaggerSpec = swaggerJsdoc({
           required: [
             "name",
             "email",
-            "mfaEnabled",
+            "emailOtpRequired",
             "updatedAt",
             "accessAssignments",
           ],
@@ -364,7 +364,7 @@ export const swaggerSpec = swaggerJsdoc({
               format: "email",
               description: "Read-only on update; must match the current value.",
             },
-            mfaEnabled: { type: "boolean" },
+            emailOtpRequired: { type: "boolean" },
             updatedAt: {
               type: "string",
               format: "date-time",
@@ -519,7 +519,7 @@ export const swaggerSpec = swaggerJsdoc({
         post: {
           tags: ["Auth"],
           summary:
-            "Validate password and either request MFA OTP or continue to role selection",
+            "Validate password and either request email OTP verification or continue to role selection",
           security: [],
           requestBody: {
             required: true,
@@ -599,24 +599,24 @@ export const swaggerSpec = swaggerJsdoc({
           "ResetPasswordRequest",
         ),
       },
-      "/auth/mfa/verify": {
+      "/auth/email-otp/verify": {
         post: publicBodyOperation(
           "Auth",
-          "Atomically verify a one-time MFA OTP and require role selection",
-          "MfaVerifyRequest",
+          "Atomically verify a one-time email OTP and require role selection",
+          "EmailOtpVerifyRequest",
         ),
       },
-      "/auth/mfa/resend": {
+      "/auth/email-otp/resend": {
         post: publicBodyOperation(
           "Auth",
-          "Resend a one-time MFA OTP without creating a session",
-          "MfaResendRequest",
+          "Resend a one-time email OTP without creating a session",
+          "EmailOtpResendRequest",
         ),
       },
       "/auth/select-role": {
         post: publicBodyOperation(
           "Auth",
-          "Consume a password or MFA role-selection proof and create a session",
+          "Consume a password or email OTP role-selection proof and create a session",
           "AccessSelectionRequest",
         ),
       },
@@ -638,7 +638,7 @@ export const swaggerSpec = swaggerJsdoc({
         get: adminSecuredOperation("Users", "Get user detail", true),
         patch: adminGrantBodyOperation(
           "Users",
-          "Update user profile, MFA, and desired access assignments",
+          "Update user profile, email OTP requirement, and desired access assignments",
           "UserUpdateRequest",
           true,
         ),
@@ -1038,7 +1038,7 @@ function adminUserListOperation() {
       },
     },
     { name: "verified", in: "query", schema: { type: "boolean" } },
-    { name: "mfaEnabled", in: "query", schema: { type: "boolean" } },
+    { name: "emailOtpRequired", in: "query", schema: { type: "boolean" } },
     {
       name: "role",
       in: "query",

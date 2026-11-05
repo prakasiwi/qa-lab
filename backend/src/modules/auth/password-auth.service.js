@@ -73,15 +73,16 @@ export async function authenticatePasswordCredentials(
   return authenticatedUser;
 }
 
-export function assertMfaRequirementSatisfied(user, authMethod) {
+export function assertEmailOtpRequirementSatisfied(user, authMethod) {
   const isPasswordAuthentication = PASSWORD_AUTH_METHODS.has(authMethod);
-  const requiresMfa = Boolean(user?.mfaEnabled) && isPasswordAuthentication;
-  if (requiresMfa) {
+  const requiresEmailOtp =
+    Boolean(user?.emailOtpRequired) && isPasswordAuthentication;
+  if (requiresEmailOtp) {
     throw new AppError(
-      "MFA is required for this account. Continue with MFA login.",
+      "Email OTP is required for this account. Continue with email OTP verification.",
       403,
       {
-        code: "MFA_REQUIRED",
+        code: "EMAIL_OTP_REQUIRED",
         next: "/login",
       },
     );

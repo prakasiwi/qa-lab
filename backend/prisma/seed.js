@@ -15,7 +15,7 @@ const prisma = new PrismaClient({
 
 async function seedUsers() {
   const passwordHash = await bcrypt.hash("password123", 10);
-  const mfaSecretHash = await bcrypt.hash("qa-lab-mfa-seed", 10);
+  const emailOtpSecretHash = await bcrypt.hash("qa-lab-email-otp-seed", 10);
   const verifiedAt = new Date();
 
   const users = [
@@ -34,13 +34,13 @@ async function seedUsers() {
       identifierVerifiedAt: verifiedAt,
     },
     {
-      name: "MFA Login User",
-      email: "mfa@qalab.id",
+      name: "Email OTP Login User",
+      email: "email-otp@qalab.id",
       passwordHash,
       status: "ACTIVE",
       identifierVerifiedAt: verifiedAt,
-      mfaEnabled: true,
-      mfaSecretHash,
+      emailOtpRequired: true,
+      emailOtpSecretHash,
     },
   ];
 
@@ -164,7 +164,7 @@ async function seedAccesses(users) {
       role: roles.GENERAL,
       permission: permissions.GENERAL,
     },
-    "mfa@qalab.id": { role: roles.GENERAL, permission: permissions.GENERAL },
+    "email-otp@qalab.id": { role: roles.GENERAL, permission: permissions.GENERAL },
   };
 
   await prisma.$transaction(async (tx) => {

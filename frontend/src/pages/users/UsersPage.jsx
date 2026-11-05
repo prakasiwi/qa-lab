@@ -27,7 +27,7 @@ const initialFilters = {
   search: "",
   status: "",
   role: "",
-  mfaEnabled: "",
+  emailOtpRequired: "",
   verified: "",
 };
 
@@ -53,7 +53,7 @@ export function UsersPage() {
         .filter((access) => access.isActive)
         .map((access) => access.role.name)
         .join(", "),
-      mfa: row.mfaEnabled ? "Required" : "Not required",
+      emailOtp: row.emailOtpRequired ? "Required" : "Not required",
     }),
   );
 
@@ -107,7 +107,7 @@ export function UsersPage() {
 
   const filter = (patch) =>
     setFilters((value) => ({ ...value, page: 1, ...patch }));
-  const activeCount = ["status", "role", "mfaEnabled", "verified"].filter(
+  const activeCount = ["status", "role", "emailOtpRequired", "verified"].filter(
     (key) => filters[key] !== "",
   ).length;
 
@@ -156,8 +156,8 @@ export function UsersPage() {
           </select>
         </label>
         <label className="field">
-          <span>MFA</span>
-          <select name="mfaEnabled" value={filters.mfaEnabled}>
+          <span>OTP</span>
+          <select name="emailOtpRequired" value={filters.emailOtpRequired}>
             <option value="">All</option>
             <option value="true">Enabled</option>
             <option value="false">Disabled</option>
@@ -205,8 +205,8 @@ export function UsersPage() {
                     onSort={toggleSort}
                   />
                   <SortableHeader
-                    label="MFA"
-                    sortKey="mfa"
+                    label="OTP"
+                    sortKey="emailOtp"
                     sort={sort}
                     onSort={toggleSort}
                   />
@@ -237,7 +237,7 @@ export function UsersPage() {
                         .map((access) => access.role.name)
                         .join(", ") || "-"}
                     </td>
-                    <td>{user.mfaEnabled ? "Required" : "Not required"}</td>
+                    <td>{user.emailOtpRequired ? "Required" : "Not required"}</td>
                     {canManage && (
                       <td>
                         <div className="table-actions">

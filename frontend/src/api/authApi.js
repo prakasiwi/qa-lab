@@ -3,10 +3,10 @@ import { api } from "./apiClient";
 const publicRequest = { skipAuthInvalidation: true };
 export const login = (payload) =>
   api.post("/auth/login", payload, publicRequest);
-export const verifyMfa = (payload) =>
-  api.post("/auth/mfa/verify", payload, publicRequest);
-export const resendMfa = (payload) =>
-  api.post("/auth/mfa/resend", payload, publicRequest);
+export const verifyEmailOtp = (payload) =>
+  api.post("/auth/email-otp/verify", payload, publicRequest);
+export const resendEmailOtp = (payload) =>
+  api.post("/auth/email-otp/resend", payload, publicRequest);
 export const selectRole = (payload) =>
   api.post("/auth/select-role", payload, publicRequest);
 export const profile = () => api.get("/auth/profile");

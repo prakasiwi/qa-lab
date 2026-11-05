@@ -13,16 +13,17 @@ import { authenticatePasswordCredentials } from "./password-auth.service.js";
 
 const createOtp = () =>
   crypto.randomInt(0, 1_000_000).toString().padStart(6, "0");
-export async function startMfaChallenge(email, password) {
+export async function startEmailOtpChallenge(email, password) {
   const user = await authenticatePasswordCredentials(email, password);
-  if (!user?.mfaEnabled) throw new AppError("Email atau password salah", 401);
-  return startMfaChallengeForUser(user);
+  if (!user?.emailOtpRequired)
+    throw new AppError("Email atau password salah", 401);
+  return startEmailOtpChallengeForUser(user);
 }
 
-export async function startMfaChallengeForUser(user) {
+export async function startEmailOtpChallengeForUser(user) {
   const challenge = await createAndDeliverChallenge({
     userId: user.id,
-    purpose: "MFA_LOGIN",
+    purpose: "EMAIL_OTP_LOGIN",
     email: user.email,
     deliver: (payload) => sendAuthMail({ ...payload, name: user.name }),
     channel: "email-otp",
@@ -31,27 +32,27 @@ export async function startMfaChallengeForUser(user) {
   return { challengeId: challenge.id };
 }
 
-export async function findMfaChallengeUserId(challengeId) {
+export async function findEmailOtpChallengeUserId(challengeId) {
   const challenge = await prisma.authChallenge.findFirst({
-    where: { id: challengeId, purpose: "MFA_LOGIN" },
+    where: { id: challengeId, purpose: "EMAIL_OTP_LOGIN" },
     select: { userId: true },
   });
   return challenge?.userId || null;
 }
 
-export async function authenticateMfa(challengeId, otp) {
+export async function authenticateEmailOtp(challengeId, otp) {
   return prisma.$transaction(async (tx) => {
     let challenge = await tx.authChallenge.findUnique({
       where: { id: challengeId },
     });
     if (!challenge) return null;
-    await lockChallengeScope(tx, challenge.userId, "MFA_LOGIN");
+    await lockChallengeScope(tx, challenge.userId, "EMAIL_OTP_LOGIN");
     challenge = await tx.authChallenge.findUnique({
       where: { id: challengeId },
     });
     const now = new Date();
     const isValid =
-      challenge?.purpose === "MFA_LOGIN" &&
+      challenge?.purpose === "EMAIL_OTP_LOGIN" &&
       challenge.channel === "email-otp:delivered" &&
       !challenge.consumedAt &&
       challenge.expiresAt > now &&
@@ -62,7 +63,7 @@ export async function authenticateMfa(challengeId, otp) {
       );
     if (!isValid) {
       if (
-        challenge?.purpose === "MFA_LOGIN" &&
+        challenge?.purpose === "EMAIL_OTP_LOGIN" &&
         !challenge.consumedAt &&
         challenge.attemptCount < getMaxChallengeAttempts()
       ) {
@@ -78,22 +79,22 @@ export async function authenticateMfa(challengeId, otp) {
         id: challenge.userId,
         status: "ACTIVE",
         identifierVerifiedAt: { not: null },
-        mfaEnabled: true,
+        emailOtpRequired: true,
       },
     });
     if (!user) return null;
-    const authentication = await prepareRoleSelection(user, "MFA", tx);
+    const authentication = await prepareRoleSelection(user, "EMAIL_OTP", tx);
     const consumed = await tx.authChallenge.updateMany({
       where: { id: challenge.id, consumedAt: null },
       data: { consumedAt: now },
     });
     if (consumed.count !== 1)
-      throw new AppError("Kode MFA tidak valid atau kedaluwarsa", 400);
+      throw new AppError("Kode OTP email tidak valid atau kedaluwarsa", 400);
     return authentication;
   });
 }
 
-export async function resendMfaChallenge(challengeId) {
+export async function resendEmailOtpChallenge(challengeId) {
   const challenge = await prisma.authChallenge.findUnique({
     where: { id: challengeId },
     include: {
@@ -104,20 +105,20 @@ export async function resendMfaChallenge(challengeId) {
           email: true,
           status: true,
           identifierVerifiedAt: true,
-          mfaEnabled: true,
+          emailOtpRequired: true,
         },
       },
     },
   });
   const user = challenge?.user;
   const isEligible =
-    challenge?.purpose === "MFA_LOGIN" &&
+    challenge?.purpose === "EMAIL_OTP_LOGIN" &&
     !challenge.consumedAt &&
     challenge.expiresAt > new Date() &&
     user?.status === "ACTIVE" &&
     Boolean(user.identifierVerifiedAt) &&
-    user.mfaEnabled;
+    user.emailOtpRequired;
   if (!isEligible)
-    throw new AppError("MFA sign-in session is invalid or expired.", 401);
-  return startMfaChallengeForUser(user);
+    throw new AppError("Email OTP sign-in session is invalid or expired.", 401);
+  return startEmailOtpChallengeForUser(user);
 }

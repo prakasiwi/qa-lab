@@ -49,7 +49,8 @@ export const getEmailVerificationTtlMs = () =>
   getDurationMs("AUTH_EMAIL_VERIFICATION_TTL", "24h");
 export const getPasswordResetTtlMs = () =>
   getDurationMs("AUTH_PASSWORD_RESET_TTL", "15m");
-export const getMfaOtpTtlMs = () => getDurationMs("AUTH_MFA_OTP_TTL", "5m");
+export const getEmailOtpTtlMs = () =>
+  getDurationMs("AUTH_EMAIL_OTP_TTL", "5m");
 export const getRoleSelectionTtlMs = () =>
   getDurationMs("AUTH_ROLE_SELECTION_TTL", "5m");
 export const getResendCooldownMs = () =>
@@ -172,7 +173,7 @@ export function validateAuthConfig() {
   getInvitationChallengeTtlMs();
   getEmailVerificationTtlMs();
   getPasswordResetTtlMs();
-  getMfaOtpTtlMs();
+  getEmailOtpTtlMs();
   getRoleSelectionTtlMs();
   getResendCooldownMs();
   getMaxChallengeAttempts();

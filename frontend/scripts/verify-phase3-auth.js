@@ -21,9 +21,8 @@ const sidebar = read("src/components/Sidebar.jsx");
 const dialog = read("src/components/SwitchRoleDialog.jsx");
 for (const endpoint of [
   "/auth/login",
-  "/auth/mfa-login",
-  "/auth/mfa/verify",
-  "/auth/mfa/resend",
+  "/auth/email-otp/verify",
+  "/auth/email-otp/resend",
   "/auth/select-role",
   "/auth/roles",
   "/auth/switch-role",
@@ -38,10 +37,10 @@ assert.doesNotMatch(login, /sso-login|old-login|Legacy login/);
 assert.doesNotMatch(routes, /old-login|sso-login|sso\/callback/);
 assert.match(sidebar, /SwitchRoleDialog/);
 assert.match(dialog, /aria-modal="true"/);
-assert.match(dialog, /event\.key === 'Escape'/);
+assert.match(dialog, /event\.key === "Escape"/);
 assert.match(dialog, /authSession\.establish\(\{ roleSwitch: true \}\)/);
 assert.match(dialog, /Current role:/);
-assert.match(dialog, /event\.key !== 'Tab'/);
+assert.match(dialog, /event\.key !== "Tab"/);
 assert.match(dialog, /closeButtonRef\.current\?\.focus\(\)/);
 assert.match(routes, /key=\{session\.generation\}/);
 assert.equal(
@@ -64,7 +63,7 @@ assert.equal(
 );
 assert.deepEqual(
   loginStageFromResponse({
-    nextStep: "OTP_REQUIRED",
+    nextStep: "EMAIL_OTP_REQUIRED",
     challengeId: "challenge-1",
   }),
   { stage: "OTP", challengeId: "challenge-1" },

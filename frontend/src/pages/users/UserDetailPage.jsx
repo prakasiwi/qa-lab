@@ -140,25 +140,25 @@ export function UserDetailPage() {
       </section>
       <section className="surface full user-card detail-section">
         <h2>Security</h2>
-        <div className="mfa-control readonly">
-          <div className="mfa-copy">
+        <div className="otp-control readonly">
+          <div className="otp-copy">
             <ShieldCheck size={28} aria-hidden="true" />
             <div>
-              <strong>Require MFA</strong>
+              <strong>Require OTP</strong>
               <p>Require an email OTP at every sign-in.</p>
             </div>
           </div>
           <span
-            className={`switch-control readonly ${user.mfaEnabled ? "is-on" : ""}`}
-            aria-label={`MFA ${user.mfaEnabled ? "on" : "off"}`}
+            className={`switch-control readonly ${user.emailOtpRequired ? "is-on" : ""}`}
+            aria-label={`OTP ${user.emailOtpRequired ? "on" : "off"}`}
           >
             <span aria-hidden="true" />
           </span>
           <strong className="switch-state">
-            {user.mfaEnabled ? "ON" : "OFF"}
+            {user.emailOtpRequired ? "ON" : "OFF"}
           </strong>
         </div>
-        <small className="mfa-readonly">Read-only</small>
+        <small className="otp-readonly">Read-only</small>
       </section>
       <section className="surface full user-card detail-section">
         <h2>Access Assignments</h2>

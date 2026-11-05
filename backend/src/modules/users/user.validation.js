@@ -14,7 +14,7 @@ const personalInformation = {
   name: Joi.string().trim().min(2).max(100).required(),
   phone: Joi.string().trim().max(30).allow("", null),
   email: Joi.string().trim().lowercase().email().required(),
-  mfaEnabled: Joi.boolean().default(false),
+  emailOtpRequired: Joi.boolean().default(false),
 };
 
 export const userIdParamsSchema = Joi.object({ id: id.required() });
@@ -34,7 +34,7 @@ export const listUsersSchema = Joi.object({
     "LOCKED",
   ),
   verified: Joi.boolean(),
-  mfaEnabled: Joi.boolean(),
+  emailOtpRequired: Joi.boolean(),
   role: Joi.string().trim().max(100),
 });
 export const createUserSchema = Joi.object({
@@ -43,7 +43,7 @@ export const createUserSchema = Joi.object({
 });
 export const updateUserSchema = Joi.object({
   ...personalInformation,
-  mfaEnabled: Joi.boolean().required(),
+  emailOtpRequired: Joi.boolean().required(),
   updatedAt: Joi.date().iso().required(),
   accessAssignments,
 });
